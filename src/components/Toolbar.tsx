@@ -22,6 +22,7 @@ interface ToolbarProps {
   totalAmount: number;
   selectedForm?: string;
   onSelectForm?: (formKey: string) => void;
+  onPreFillDemo?: () => void;
 }
 
 export function Toolbar({
@@ -35,6 +36,7 @@ export function Toolbar({
   totalAmount,
   selectedForm = "rfp",
   onSelectForm,
+  onPreFillDemo,
 }: ToolbarProps) {
   return (
     <div className="w-full max-w-[850px] mx-auto sticky top-3 z-40 mb-4 bg-white border border-slate-300 shadow-sm px-4 py-2.5 flex items-center justify-between gap-3 relative">
@@ -43,7 +45,7 @@ export function Toolbar({
 
       {/* Left: Form Selector occupying expanded space */}
       <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
-        <div className="relative flex items-center w-full max-w-[320px] sm:max-w-[360px]">
+        <div className="relative flex items-center w-full max-w-[300px] sm:max-w-[340px]">
           <FileText className="w-3.5 h-3.5 text-[#003366] absolute left-2.5 pointer-events-none" />
           <select
             id="active-form-selector"
@@ -58,6 +60,19 @@ export function Toolbar({
           </select>
           <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 pointer-events-none" />
         </div>
+
+        {/* Pre-fill Demo Button */}
+        {onPreFillDemo && (
+          <button
+            type="button"
+            onClick={onPreFillDemo}
+            className="h-8 px-2.5 text-xs font-bold text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 transition-colors flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+            title="Pre-fill form with sample quotation data"
+          >
+            <span className="text-amber-600 font-black">⚡</span>
+            <span className="hidden sm:inline">Pre-fill Demo</span>
+          </button>
+        )}
 
         {/* Revision badge */}
         {isRevision && (
@@ -95,6 +110,7 @@ export function Toolbar({
         </button>
 
         <button
+          id="submit-to-clickup-btn"
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting || isGeneratingPdf}

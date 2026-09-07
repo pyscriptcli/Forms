@@ -21,6 +21,7 @@ import { SupportingDocuments } from "@/components/SupportingDocuments";
 import { SubmissionModal } from "@/components/SubmissionModal";
 import { SubmissionLoadingModal, SubmissionStage } from "@/components/SubmissionLoadingModal";
 import { ValidationAlertBanner } from "@/components/ValidationAlertBanner";
+import { PrototypeTourModal } from "@/components/PrototypeTourModal";
 import { generateRfpPdf, downloadPdfBlob, generateRfpImageBlob } from "@/lib/pdfGenerator";
 import {
   validateRfpForm,
@@ -268,6 +269,81 @@ function RfpAppContent() {
     } catch (e) {
       console.warn("Could not load task details for revision:", e);
     }
+  };
+
+  const handlePreFillDemo = () => {
+    setSelectedForm("rfp");
+    const today = new Date().toISOString().split("T")[0];
+
+    setFormData({
+      date: today,
+      payee: "Silicon Valley Computer Group Inc.",
+      department: "ISD",
+      items: [
+        {
+          id: "demo-item-1",
+          description: "Dell Latitude 5440 14\" i7 16GB 512GB SSD",
+          qty: 3,
+          unit: "pcs",
+          unitPrice: 48500,
+          amount: 145500,
+        },
+        {
+          id: "demo-item-2",
+          description: "Dell UltraSharp 27\" QHD IPS Monitors (U2724D)",
+          qty: 6,
+          unit: "pcs",
+          unitPrice: 14200,
+          amount: 85200,
+        },
+        {
+          id: "demo-item-3",
+          description: "USB-C Dual 4K Universal Docking Stations",
+          qty: 3,
+          unit: "pcs",
+          unitPrice: 6800,
+          amount: 20400,
+        },
+        { id: "demo-item-4", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
+        { id: "demo-item-5", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
+      ],
+      totalAmount: 251100,
+      purpose: "Procurement of workstation hardware and dual-monitor setup for incoming ISD software engineers (Q3 Expansion).",
+      paymentMethod: "check",
+      paymentMethods: ["check"],
+      bank: "BDO Unibank",
+      accountName: "Silicon Valley Computer Group Inc.",
+      accountNumber: "0012-3456-7890",
+      urgency: "urgent",
+      urgencyOptions: ["urgent"],
+      dateNeeded: today,
+      requestedByName: "Dave - ISD Lead",
+      requestedByEmail: "dave.isd@primephilippines.com",
+      signatureType: "draw",
+      signatureDataUrl:
+        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><path d='M20,40 Q50,10 90,35 T170,25' fill='none' stroke='%23003366' stroke-width='2.5'/></svg>",
+      requestedByRemarks: "Approved under Q3 ISD Capital Expenditure budget.",
+    });
+
+    const dummyFile = new File(
+      ["Sample vendor quotation for prototype testing"],
+      "Quotation_SVCG_2026_Q3_ISD_Laptops.pdf",
+      { type: "application/pdf" }
+    );
+    setRawSupportingFiles([dummyFile]);
+    setSupportingFilesList([
+      {
+        id: "demo-doc-1",
+        name: "Quotation_SVCG_2026_Q3_ISD_Laptops.pdf",
+        size: 245800,
+        type: "application/pdf",
+        dataUrl: "data:application/pdf;base64,JVBERi0xLjQKJcTl8uXrp/Og0MTGCjQgMC...",
+      },
+    ]);
+
+    setValidationErrors({});
+    setMissingFieldsList([]);
+    setErrorMessage(null);
   };
 
   const handleReset = () => {
@@ -564,6 +640,7 @@ function RfpAppContent() {
             setMissingFieldsList([]);
             setErrorMessage(null);
           }}
+          onPreFillDemo={handlePreFillDemo}
         />
 
         {/* Error banner */}
@@ -575,7 +652,9 @@ function RfpAppContent() {
         )}
 
         {/* AI Supplier Quotation Scanner (Dedicated for RFP) */}
-        {selectedForm === "rfp" && <QuotationDropzone onDataExtracted={handleDataExtracted} />}
+        <div id="quotation-dropzone-section">
+          {selectedForm === "rfp" && <QuotationDropzone onDataExtracted={handleDataExtracted} />}
+        </div>
 
         {/* Extraction Review & Undo Banner */}
         {selectedForm === "rfp" && extractedBanner && (
@@ -595,7 +674,7 @@ function RfpAppContent() {
         />
 
         {/* Document First Paper Sheet */}
-        <main className="mb-8">
+        <main id="rfp-sheet-container" className="mb-8">
           {selectedForm === "rfp" && (
             <RfpSheet
               data={formData}
@@ -649,6 +728,9 @@ function RfpAppContent() {
         pdfBlob={lastGeneratedPdf}
         payeeName={activePayeeName}
       />
+
+      {/* Prototype Spotlight Tour & Drawer Guide */}
+      <PrototypeTourModal onPreFillDemo={handlePreFillDemo} />
     </div>
   );
 }

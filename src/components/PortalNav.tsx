@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileEdit, PackageSearch, ShieldCheck, Workflow, ExternalLink } from "lucide-react";
+import { FileEdit, PackageSearch, ShieldCheck, Workflow, ExternalLink, Sparkles } from "lucide-react";
 
 export function PortalNav() {
   const pathname = usePathname();
@@ -55,7 +55,7 @@ export function PortalNav() {
         </Link>
 
         {/* Center / Right: Navigation Tabs */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div id="portal-nav-track-links" className="flex items-center gap-1 sm:gap-2">
           {navItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -73,6 +73,21 @@ export function PortalNav() {
               </Link>
             );
           })}
+
+          {/* Prototype Tour Button */}
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new CustomEvent("open-prototype-drawer"));
+              }
+            }}
+            className="h-8 px-2.5 text-xs font-bold text-[#C9AB4C] bg-[#C9AB4C]/15 hover:bg-[#C9AB4C]/25 border border-[#C9AB4C]/40 rounded-none flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Open Prototype Walkthrough & Guide"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#C9AB4C]" />
+            <span>Tour</span>
+          </button>
 
           <div className="h-4 w-[1px] bg-white/20 mx-1 hidden sm:block" />
 
