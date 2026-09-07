@@ -25,13 +25,9 @@ git add .
 # 2. Commit all changes
 git commit -m "feat: complete PRIME Philippines Forms Portal with RFP, PO, PCV, 6-stage tracker, and approvals"
 
-# 3. Push to your GitHub repository (origin is already linked to https://github.com/pyscriptcli/Forms.git)
+# 3. Push to your GitHub repository (origin is linked to https://github.com/pyscriptcli/Forms-Portal.git)
 git push origin main
 ```
-
-> [!NOTE]
-> If you ever create a new or different repository, you can change the remote with:
-> `git remote set-url origin https://github.com/YOUR_USERNAME/YOUR_REPO.git`
 
 ---
 
@@ -39,7 +35,7 @@ git push origin main
 
 1. Log into your [Vercel Dashboard](https://vercel.com).
 2. Click **"Add New..."** ➔ **"Project"**.
-3. Under **"Import Git Repository"**, find and select **`Forms`** (or your repository name).
+3. Under **"Import Git Repository"**, find and select **`Forms-Portal`**.
 4. **Framework Preset**: Next.js (automatically detected).
 5. **Root Directory**: `./` (leave default).
 
