@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileEdit, PackageSearch, ShieldCheck, ExternalLink } from "lucide-react";
+import { FileEdit, PackageSearch, ShieldCheck, Workflow, ExternalLink } from "lucide-react";
 
 export function PortalNav() {
   const pathname = usePathname();
@@ -26,6 +26,12 @@ export function PortalNav() {
       href: "/approvals",
       icon: ShieldCheck,
       isActive: pathname.startsWith("/approvals"),
+    },
+    {
+      label: "Workflow",
+      href: "/workflow",
+      icon: Workflow,
+      isActive: pathname.startsWith("/workflow"),
     },
   ];
 
