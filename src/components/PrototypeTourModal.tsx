@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
 import { 
   Sparkles, 
   X, 
@@ -19,7 +20,7 @@ import {
 } from "lucide-react";
 
 interface PrototypeTourModalProps {
-  onPreFillDemo: () => void;
+  onPreFillDemo?: () => void;
 }
 
 interface TourStep {
@@ -63,10 +64,32 @@ const TOUR_STEPS: TourStep[] = [
 ];
 
 export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const [isOpenDrawer, setIsOpenDrawer] = useState(false);
   const [isTourActive, setIsTourActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+
+  const handleTriggerPreFill = () => {
+    if (onPreFillDemo) {
+      onPreFillDemo();
+    } else if (pathname === "/") {
+      window.dispatchEvent(new CustomEvent("prefill-demo"));
+    } else {
+      router.push("/?prefill=true");
+    }
+  };
+
+  const handleTriggerTour = () => {
+    if (pathname === "/") {
+      setIsTourActive(true);
+      setCurrentStepIndex(0);
+    } else {
+      router.push("/?tour=true");
+    }
+  };
 
   // Check first visit
   useEffect(() => {
@@ -168,7 +191,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
                 <button
                   onClick={() => {
                     handleDismissWelcome();
-                    onPreFillDemo();
+                    handleTriggerPreFill();
                   }}
                   className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded transition-colors"
                 >
@@ -321,7 +344,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               </div>
               <button
                 onClick={() => {
-                  onPreFillDemo();
+                  handleTriggerPreFill();
                   setIsOpenDrawer(false);
                 }}
                 className="px-3 py-1.5 bg-[#C9AB4C] hover:bg-[#b5993f] text-[#181A1D] font-bold text-xs rounded shadow-xs whitespace-nowrap"
@@ -418,8 +441,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               <button
                 onClick={() => {
                   setIsOpenDrawer(false);
-                  setIsTourActive(true);
-                  setCurrentStepIndex(0);
+                  handleTriggerTour();
                 }}
                 className="w-full py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold rounded flex items-center justify-center gap-1.5 shadow-2xs transition-colors"
               >

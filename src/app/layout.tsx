@@ -22,6 +22,7 @@ const montserrat = Montserrat({
 });
 
 import { PortalNav } from "@/components/PortalNav";
+import { PrototypeTourModal } from "@/components/PrototypeTourModal";
 
 export const metadata: Metadata = {
   title: "Forms Portal - PRIME Philippines",
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-[#f8fafc] text-[#0C0C0E]">
         <PortalNav />
         <main className="flex-1 w-full">{children}</main>
+        <PrototypeTourModal />
       </body>
     </html>
   );

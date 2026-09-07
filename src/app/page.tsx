@@ -21,7 +21,6 @@ import { SupportingDocuments } from "@/components/SupportingDocuments";
 import { SubmissionModal } from "@/components/SubmissionModal";
 import { SubmissionLoadingModal, SubmissionStage } from "@/components/SubmissionLoadingModal";
 import { ValidationAlertBanner } from "@/components/ValidationAlertBanner";
-import { PrototypeTourModal } from "@/components/PrototypeTourModal";
 import { generateRfpPdf, downloadPdfBlob, generateRfpImageBlob } from "@/lib/pdfGenerator";
 import {
   validateRfpForm,
@@ -129,6 +128,8 @@ const getInitialPcvData = (): PcvFormData => {
 function RfpAppContent() {
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get("taskId");
+  const prefillParam = searchParams.get("prefill");
+  const tourParam = searchParams.get("tour");
 
   const [formData, setFormData] = useState<RfpFormData>(getInitialFormData);
   const [poData, setPoData] = useState<PoFormData>(getInitialPoData);
@@ -215,6 +216,31 @@ function RfpAppContent() {
       localStorage.setItem("prime_pcv_draft", JSON.stringify(pcvData));
     }
   }, [pcvData]);
+
+  // Handle prefill query parameter (when triggered from other pages)
+  useEffect(() => {
+    if (prefillParam === "true") {
+      handlePreFillDemo();
+      window.history.replaceState(null, "", "/");
+    }
+  }, [prefillParam]);
+
+  // Handle tour query parameter
+  useEffect(() => {
+    if (tourParam === "true") {
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("open-prototype-tour"));
+        window.history.replaceState(null, "", "/");
+      }, 400);
+    }
+  }, [tourParam]);
+
+  // Listen for prefill-demo event from drawer when already on "/"
+  useEffect(() => {
+    const onPrefill = () => handlePreFillDemo();
+    window.addEventListener("prefill-demo", onPrefill);
+    return () => window.removeEventListener("prefill-demo", onPrefill);
+  }, []);
 
   const getValidationResult = () => {
     let result: ValidationResult;
@@ -317,8 +343,8 @@ function RfpAppContent() {
       urgency: "urgent",
       urgencyOptions: ["urgent"],
       dateNeeded: today,
-      requestedByName: "Dave - ISD Lead",
-      requestedByEmail: "dave.isd@primephilippines.com",
+      requestedByName: "DAVE POLICARPIO",
+      requestedByEmail: "dave.policarpio@primephilippines.com",
       signatureType: "draw",
       signatureDataUrl:
         "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><path d='M20,40 Q50,10 90,35 T170,25' fill='none' stroke='%23003366' stroke-width='2.5'/></svg>",
@@ -728,9 +754,6 @@ function RfpAppContent() {
         pdfBlob={lastGeneratedPdf}
         payeeName={activePayeeName}
       />
-
-      {/* Prototype Spotlight Tour & Drawer Guide */}
-      <PrototypeTourModal onPreFillDemo={handlePreFillDemo} />
     </div>
   );
 }
