@@ -352,7 +352,7 @@ function RfpAppContent() {
     });
 
     const dummyFile = new File(
-      ["Sample vendor quotation for prototype testing"],
+      ["Sample vendor quotation for procurement request"],
       "Quotation_SVCG_2026_Q3_ISD_Laptops.pdf",
       { type: "application/pdf" }
     );

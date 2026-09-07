@@ -91,7 +91,7 @@ export default function WorkflowPage() {
               </span>
             </div>
             <span className="text-[11px] text-slate-400">
-              PRIME Philippines • Unified Workflow Architecture
+              Unified Workflow Architecture
             </span>
           </div>
 

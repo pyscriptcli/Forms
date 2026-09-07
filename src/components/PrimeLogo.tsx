@@ -12,7 +12,7 @@ export function PrimeLogo({ className = "h-11" }: PrimeLogoProps) {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/prime-philippines-logo.png"
-        alt="PRIME Philippines"
+        alt="Forms Portal"
         className="h-full w-auto object-contain"
       />
     </div>

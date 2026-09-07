@@ -83,7 +83,7 @@ export function PortalNav() {
               }
             }}
             className="h-8 px-2.5 text-xs font-bold text-[#C9AB4C] bg-[#C9AB4C]/15 hover:bg-[#C9AB4C]/25 border border-[#C9AB4C]/40 rounded-none flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Open Prototype Walkthrough & Guide"
+            title="Open Walkthrough & Guide"
           >
             <Sparkles className="w-3.5 h-3.5 text-[#C9AB4C]" />
             <span>Tour</span>

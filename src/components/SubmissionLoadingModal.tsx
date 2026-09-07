@@ -174,7 +174,7 @@ export function SubmissionLoadingModal({
         {/* Bottom Reassurance Footer */}
         <div className="px-6 py-3 bg-white border-t border-slate-200 text-center">
           <span className="text-[11px] text-slate-400 italic">
-            🔒 Secure 256-bit SSL upload directly to PRIME Philippines ClickUp Workspace
+            🔒 Secure 256-bit SSL upload directly to ClickUp Workspace
           </span>
         </div>
       </div>

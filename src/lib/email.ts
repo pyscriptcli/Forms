@@ -15,7 +15,7 @@ export function getEmailConfig(): EmailConfig {
   const pass = process.env.OUTLOOK_EMAIL_PASS || process.env.SMTP_PASS || "";
   const host = process.env.OUTLOOK_SMTP_HOST || process.env.SMTP_HOST || "smtp-mail.outlook.com";
   const port = parseInt(process.env.OUTLOOK_SMTP_PORT || process.env.SMTP_PORT || "587", 10);
-  const fromName = process.env.EMAIL_FROM_NAME || "PRIME Philippines Forms Portal";
+  const fromName = process.env.EMAIL_FROM_NAME || "Forms Portal";
 
   const isConfigured = Boolean(user && pass && user !== "mock" && !user.includes("example.com"));
   return { user, pass, host, port, fromName, isConfigured };
@@ -70,7 +70,7 @@ export async function sendApproverNotification({
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-top: 4px solid #003366;">
       <div style="margin-bottom: 20px;">
-        <h2 style="color: #003366; margin: 0; font-size: 20px;">PRIME Philippines Forms Portal</h2>
+        <h2 style="color: #003366; margin: 0; font-size: 20px;">Forms Portal</h2>
         <p style="color: #64748b; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Payment Request Approval Required</p>
       </div>
 
@@ -168,7 +168,7 @@ export async function sendRequestorRevisionNotification({
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-top: 4px solid #f59e0b;">
       <div style="margin-bottom: 20px;">
-        <h2 style="color: #003366; margin: 0; font-size: 20px;">PRIME Philippines Forms Portal</h2>
+        <h2 style="color: #003366; margin: 0; font-size: 20px;">Forms Portal</h2>
         <p style="color: #b45309; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Revision Requested on Your RFP</p>
       </div>
 

@@ -58,7 +58,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     targetId: "portal-nav-track-links",
     title: "5. Real-Time Tracking & Approvals",
-    description: "Use the top header to test the other roles: go to 'Track Status' to follow the 6 stages, or go to 'Approvals' to test 1-click approvals.",
+    description: "Use the top header to navigate the entire workflow: go to 'Track Status' to follow the 6 stages in real-time, or go to 'Approvals' for 1-click approvals.",
     tip: "Tip: Check the 'Workflow' tab to view the official process map.",
   },
 ];
@@ -163,7 +163,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#C9AB4C]">
-                  Prototype Guide
+                  Portal Guide
                 </span>
                 <button
                   onClick={handleDismissWelcome}
@@ -174,7 +174,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
                 </button>
               </div>
               <h3 className="text-sm font-bold text-white mt-0.5">
-                Welcome to the PRIME Forms Portal!
+                Welcome to the Forms Portal!
               </h3>
               <p className="text-xs text-slate-300 mt-1 leading-relaxed">
                 Want a quick 1-minute guided tour of how to fill, sign, submit, and track forms?
@@ -212,7 +212,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#C9AB4C] animate-pulse" />
                 <span className="text-xs font-bold text-white tracking-wide">
-                  Prototype Walkthrough ({currentStepIndex + 1} of {TOUR_STEPS.length})
+                  Portal Walkthrough ({currentStepIndex + 1} of {TOUR_STEPS.length})
                 </span>
               </div>
               <button
@@ -287,23 +287,23 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
         </div>
       )}
 
-      {/* 3. Floating "Prototype Guide" Trigger Button (Bottom Right) */}
+      {/* 3. Floating "User Guide" Trigger Button (Bottom Right) */}
       <div className="fixed bottom-5 right-5 z-40">
         <button
           onClick={() => setIsOpenDrawer(true)}
           className="group flex items-center gap-2 px-3.5 py-2.5 bg-[#181A1D] hover:bg-black text-white rounded-full shadow-lg border border-[#C9AB4C]/50 hover:border-[#C9AB4C] transition-all hover:scale-105 active:scale-95"
-          title="Open Prototype Testing Guide"
+          title="Open Portal Guide & Walkthrough"
         >
           <div className="w-5 h-5 rounded-full bg-[#C9AB4C] text-[#181A1D] flex items-center justify-center font-bold text-xs">
             ✨
           </div>
           <span className="text-xs font-bold tracking-wide pr-1">
-            Prototype Guide
+            User Guide
           </span>
         </button>
       </div>
 
-      {/* 4. Dedicated Slide-Over Drawer: Multi-Role Testing Guide */}
+      {/* 4. Dedicated Slide-Over Drawer: Multi-Role Workflow Guide */}
       {isOpenDrawer && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-[1px] animate-in fade-in duration-150">
           <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col border-l border-slate-300 animate-in slide-in-from-right duration-200">
@@ -313,14 +313,14 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 rounded bg-[#C9AB4C]/20 text-[#C9AB4C] border border-[#C9AB4C]/30 text-[10px] font-bold uppercase tracking-wider">
-                    Tester Cheat Sheet
+                    Quick Reference Guide
                   </span>
                 </div>
                 <h3 className="text-lg font-bold text-white mt-1">
-                  Prototype Testing Guide
+                  Portal Walkthrough Guide
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  How to test all 4 roles in this prototype
+                  How to use all 4 roles across the workflow
                 </p>
               </div>
               <button
@@ -336,7 +336,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               <div>
                 <div className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
                   <Zap className="w-4 h-4 text-amber-600 fill-amber-500" />
-                  <span>Test Submission in 5 Seconds</span>
+                  <span>Fill Sample Request in 5 Seconds</span>
                 </div>
                 <p className="text-[11px] text-amber-900 mt-0.5">
                   Fills vendor, 3 laptop items, and dummy invoice automatically.
@@ -353,11 +353,11 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
               </button>
             </div>
 
-            {/* Role-by-Role Guided Testing Journey */}
+            {/* Role-by-Role Guided Workflow Journey */}
             <div className="flex-1 overflow-y-auto p-5 space-y-4">
               
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-                Follow This 4-Step Testing Journey:
+                Follow This 4-Step Workflow Journey:
               </div>
 
               {/* Step 1: Requestor */}
@@ -390,7 +390,7 @@ export function PrototypeTourModal({ onPreFillDemo }: PrototypeTourModalProps) {
                   </Link>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Go to <strong>Approvals</strong> in the header. See your pending request and test clicking <strong>Approve</strong> or <strong>Request Revision</strong> with feedback remarks.
+                  Go to <strong>Approvals</strong> in the header to review pending requests and execute 1-click <strong>Approve</strong> or <strong>Request Revision</strong> with feedback remarks.
                 </p>
               </div>
 

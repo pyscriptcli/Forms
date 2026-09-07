@@ -25,8 +25,18 @@ import { PortalNav } from "@/components/PortalNav";
 import { PrototypeTourModal } from "@/components/PrototypeTourModal";
 
 export const metadata: Metadata = {
-  title: "Forms Portal - PRIME Philippines",
+  title: "Forms Portal",
   description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+  openGraph: {
+    title: "Forms Portal",
+    description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+    siteName: "Forms Portal",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Forms Portal",
+    description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+  },
 };
 
 export default function RootLayout({
