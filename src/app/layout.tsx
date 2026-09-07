@@ -23,19 +23,20 @@ const montserrat = Montserrat({
 
 import { PortalNav } from "@/components/PortalNav";
 import { PrototypeTourModal } from "@/components/PrototypeTourModal";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export const metadata: Metadata = {
   title: "Forms Portal",
-  description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+  description: "Official Forms Portal & Request Tracker for ClickUp",
   openGraph: {
     title: "Forms Portal",
-    description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+    description: "Official Forms Portal & Request Tracker for ClickUp",
     siteName: "Forms Portal",
   },
   twitter: {
     card: "summary_large_image",
     title: "Forms Portal",
-    description: "Official Forms Portal & Request for Payment (RFP) for ClickUp",
+    description: "Official Forms Portal & Request Tracker for ClickUp",
   },
 };
 
@@ -50,9 +51,11 @@ export default function RootLayout({
       className={`${cormorant.variable} ${bebas.variable} ${montserrat.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans bg-[#f8fafc] text-[#0C0C0E]">
-        <PortalNav />
-        <main className="flex-1 w-full">{children}</main>
-        <PrototypeTourModal />
+        <AuthProvider>
+          <PortalNav />
+          <main className="flex-1 w-full">{children}</main>
+          <PrototypeTourModal />
+        </AuthProvider>
       </body>
     </html>
   );

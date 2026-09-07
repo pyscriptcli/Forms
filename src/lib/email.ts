@@ -65,17 +65,17 @@ export async function sendApproverNotification({
     maximumFractionDigits: 2,
   });
 
-  const subject = `[ACTION REQUIRED] RFP Approval: ${data.payee} — ₱${formattedTotal} (${data.department || "General"})`;
+  const subject = `[ACTION REQUIRED] Request Approval: ${data.payee} — ₱${formattedTotal} (${data.department || "General"})`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-top: 4px solid #003366;">
       <div style="margin-bottom: 20px;">
         <h2 style="color: #003366; margin: 0; font-size: 20px;">Forms Portal</h2>
-        <p style="color: #64748b; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Payment Request Approval Required</p>
+        <p style="color: #64748b; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px;">Form Approval Required</p>
       </div>
 
       <p style="font-size: 14px; color: #334155;">Hello <strong>${recipientName}</strong>,</p>
-      <p style="font-size: 14px; color: #334155;">A new Request for Payment has been submitted by <strong>${data.requestedByName || "a team member"}</strong> and requires your review and approval:</p>
+      <p style="font-size: 14px; color: #334155;">A new request has been submitted by <strong>${data.requestedByName || "a team member"}</strong> and requires your review and approval:</p>
 
       <table style="width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px;">
         <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -163,17 +163,17 @@ export async function sendRequestorRevisionNotification({
   const editUrl = `${appUrl}/?taskId=${taskId}`;
   const trackUrl = `${appUrl}/track?id=${taskId}`;
 
-  const subject = `[REVISION REQUESTED] RFP #${taskId}: ${data.payee} — Action Required`;
+  const subject = `[REVISION REQUESTED] Request #${taskId}: ${data.payee} — Action Required`;
 
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-top: 4px solid #f59e0b;">
       <div style="margin-bottom: 20px;">
         <h2 style="color: #003366; margin: 0; font-size: 20px;">Forms Portal</h2>
-        <p style="color: #b45309; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Revision Requested on Your RFP</p>
+        <p style="color: #b45309; margin: 2px 0 0 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Revision Requested on Your Submission</p>
       </div>
 
       <p style="font-size: 14px; color: #334155;">Hello <strong>${recipientName}</strong>,</p>
-      <p style="font-size: 14px; color: #334155;">Your Request for Payment for <strong>${data.payee}</strong> requires updates before it can be approved.</p>
+      <p style="font-size: 14px; color: #334155;">Your request for <strong>${data.payee}</strong> requires updates before it can be approved.</p>
 
       <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px; margin: 20px 0;">
         <p style="margin: 0 0 6px 0; font-size: 12px; font-weight: bold; color: #92400e; text-transform: uppercase;">Approver's Revision Notes:</p>
@@ -182,7 +182,7 @@ export async function sendRequestorRevisionNotification({
 
       <div style="margin: 30px 0; text-align: center;">
         <a href="${editUrl}" style="background-color: #003366; color: #ffffff; padding: 12px 28px; text-decoration: none; font-size: 14px; font-weight: bold; display: inline-block; border-radius: 4px;">
-          ✏️ Edit & Resubmit RFP
+          ✏️ Edit & Resubmit Form
         </a>
       </div>
 

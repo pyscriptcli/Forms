@@ -93,7 +93,7 @@ function TrackContent() {
               Request Status & Progress Tracker
             </h1>
             <p className="text-xs text-slate-500 mt-1">
-              Live e-commerce style tracking for all submitted Requests for Payment (RFP).
+              Tracking for all submitted Requests
             </p>
           </div>
           <button

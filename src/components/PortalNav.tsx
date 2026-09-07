@@ -4,9 +4,11 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FileEdit, PackageSearch, ShieldCheck, Workflow, ExternalLink, Sparkles } from "lucide-react";
+import { useSession, signIn, signOut } from "next-auth/react";
 
 export function PortalNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const navItems = [
     {
@@ -91,17 +93,34 @@ export function PortalNav() {
 
           <div className="h-4 w-[1px] bg-white/20 mx-1 hidden sm:block" />
 
-          {/* Finance ClickUp Direct Link */}
-          <a
-            href="https://app.clickup.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-8 px-2.5 text-[11px] font-medium text-slate-300 hover:text-white flex items-center gap-1 hover:bg-white/10 transition-colors hidden md:flex"
-            title="Open ClickUp Workspace (Finance view)"
-          >
-            <span>ClickUp (Finance)</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
-          </a>
+          {/* User Auth */}
+          <div className="flex items-center">
+            {session ? (
+              <div className="flex items-center gap-2 h-8 px-2.5 text-xs text-white">
+                {session.user?.image ? (
+                  <img src={session.user.image} alt="Avatar" className="w-5 h-5 rounded-full border border-slate-500" />
+                ) : (
+                  <div className="w-5 h-5 rounded-full bg-[#003366] border border-blue-400 flex items-center justify-center font-bold text-[10px]">
+                    {session.user?.name?.charAt(0) || "U"}
+                  </div>
+                )}
+                <span className="hidden sm:inline-block font-medium truncate max-w-[100px]">{session.user?.name}</span>
+                <button
+                  onClick={() => signOut()}
+                  className="ml-1 text-[10px] uppercase font-bold text-slate-400 hover:text-white"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => signIn()}
+                className="h-8 px-3 text-xs font-bold text-white bg-[#003366] hover:bg-[#002244] border border-[#004080] rounded flex items-center shadow-xs transition-colors"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </header>

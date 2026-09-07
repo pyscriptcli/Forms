@@ -55,10 +55,10 @@ export function SubmissionModal({
             <CheckCircle2 className="w-8 h-8 text-[#C9AB4C]" />
           </div>
           <h2 className="font-serif italic text-2xl font-bold tracking-tight text-white">
-            {response.message || "RFP Successfully Processed!"}
+            {response.message || "Request Successfully Processed!"}
           </h2>
           <p className="text-slate-300 text-xs mt-1">
-            Official Request for Payment document generated & synchronized
+            Official form document generated & synchronized
           </p>
 
           {response.isMock && (

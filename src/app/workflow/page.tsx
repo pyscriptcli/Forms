@@ -34,7 +34,7 @@ export default function WorkflowPage() {
             <div className="h-4 w-[1px] bg-slate-300 hidden sm:block" />
             <div>
               <h1 className="text-sm sm:text-base font-bold text-slate-900 leading-none">
-                Request for Payment &amp; Forms Processing Workflow
+                Forms Processing &amp; Request Workflow
               </h1>
               <p className="text-[11px] text-slate-500 mt-0.5">
                 5-Column Cross-Functional Swimlane Standard Operating Procedure

@@ -125,7 +125,10 @@ const getInitialPcvData = (): PcvFormData => {
   };
 };
 
+import { useSession } from "next-auth/react";
+
 function RfpAppContent() {
+  const { data: session } = useSession();
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get("taskId");
   const prefillParam = searchParams.get("prefill");
@@ -141,6 +144,30 @@ function RfpAppContent() {
     itemsCount: number;
     totalAmount: number;
   } | null>(null);
+
+  // Sync session user data into forms if empty
+  useEffect(() => {
+    if (session?.user) {
+      const name = session.user.name || "";
+      const email = session.user.email || "";
+
+      setFormData((prev) => ({
+        ...prev,
+        requestedByName: prev.requestedByName || name,
+        requestedByEmail: prev.requestedByEmail || email,
+      }));
+
+      setPoData((prev) => ({
+        ...prev,
+        preparedByName: prev.preparedByName || name,
+      }));
+
+      setPcvData((prev) => ({
+        ...prev,
+        requestedByName: prev.requestedByName || name,
+      }));
+    }
+  }, [session]);
 
   const [rawSupportingFiles, setRawSupportingFiles] = useState<File[]>([]);
   const [supportingFilesList, setSupportingFilesList] = useState<SupportingFile[]>([]);
