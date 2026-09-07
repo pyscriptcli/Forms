@@ -3,19 +3,40 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import confetti from "canvas-confetti";
-import { RfpFormData, RfpLineItem, SubmissionResponse, SupportingFile } from "@/types/rfp";
+import {
+  RfpFormData,
+  RfpLineItem,
+  PoFormData,
+  PcvFormData,
+  SubmissionResponse,
+  SupportingFile,
+} from "@/types/rfp";
 import { RfpSheet } from "@/components/RfpSheet";
+import { PoSheet } from "@/components/PoSheet";
+import { PcvSheet } from "@/components/PcvSheet";
 import { Toolbar } from "@/components/Toolbar";
+import { QuotationDropzone } from "@/components/QuotationDropzone";
+import { ExtractionBanner } from "@/components/ExtractionBanner";
 import { SupportingDocuments } from "@/components/SupportingDocuments";
 import { SubmissionModal } from "@/components/SubmissionModal";
-import { generateRfpPdf, downloadPdfBlob } from "@/lib/pdfGenerator";
-import { AlertCircle, CheckCircle2, Info, Building2, HelpCircle } from "lucide-react";
+import { SubmissionLoadingModal, SubmissionStage } from "@/components/SubmissionLoadingModal";
+import { ValidationAlertBanner } from "@/components/ValidationAlertBanner";
+import { generateRfpPdf, downloadPdfBlob, generateRfpImageBlob } from "@/lib/pdfGenerator";
+import {
+  validateRfpForm,
+  validatePoForm,
+  validatePcvForm,
+  ValidationResult,
+  ValidationErrorItem,
+  scrollToFormField,
+} from "@/lib/rfpValidation";
+import { AlertCircle } from "lucide-react";
 
 const getInitialFormData = (): RfpFormData => {
   const today = new Date().toISOString().split("T")[0];
   const initialItems: RfpLineItem[] = [
-    { id: "row-1", description: "", qty: "", unit: "pcs", unitPrice: "", amount: 0 },
-    { id: "row-2", description: "", qty: "", unit: "lot", unitPrice: "", amount: 0 },
+    { id: "row-1", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
+    { id: "row-2", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
     { id: "row-3", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
     { id: "row-4", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
     { id: "row-5", description: "", qty: "", unit: "", unitPrice: "", amount: 0 },
@@ -29,10 +50,12 @@ const getInitialFormData = (): RfpFormData => {
     totalAmount: 0,
     purpose: "",
     paymentMethod: "online",
+    paymentMethods: ["online"],
     bank: "",
     accountName: "",
     accountNumber: "",
     urgency: "not_urgent",
+    urgencyOptions: ["not_urgent"],
     dateNeeded: "",
     requestedByName: "",
     requestedByEmail: "",
@@ -42,17 +65,92 @@ const getInitialFormData = (): RfpFormData => {
   };
 };
 
+const getInitialPoData = (): PoFormData => {
+  const today = new Date().toISOString().split("T")[0];
+  return {
+    date: today,
+    poNumber: `PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    vendorName: "",
+    address: "",
+    tin: "",
+    contactNo: "",
+    emailAddress: "",
+    accountManager: "",
+    items: [
+      { id: "po-row-1", itemNo: 1, details: "", unit: "pcs", quantity: 1, unitPrice: "", total: 0 },
+      { id: "po-row-2", itemNo: 2, details: "", unit: "pcs", quantity: 1, unitPrice: "", total: 0 },
+      { id: "po-row-3", itemNo: 3, details: "", unit: "pcs", quantity: 1, unitPrice: "", total: 0 },
+    ],
+    subtotal: 0,
+    vatRate: 12,
+    vatAmount: 0,
+    netOfVat: 0,
+    withholdingTaxRate: 2,
+    withholdingTaxAmount: 0,
+    totalAmountDue: 0,
+    additionalNotes: "",
+    department: "Procurement",
+    dateNeeded: "",
+    urgency: "not_urgent",
+    preparedByName: "",
+    preparedByDate: today,
+    notedByName: "",
+    notedByDate: "",
+    approvedByName: "",
+    approvedByDate: "",
+    conformeName: "",
+    conformeDate: "",
+  };
+};
+
+const getInitialPcvData = (): PcvFormData => {
+  const today = new Date().toISOString().split("T")[0];
+  return {
+    voucherNo: `PCV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    date: today,
+    payee: "",
+    department: "",
+    amount: 0,
+    dateNeeded: "",
+    urgency: "not_urgent",
+    particulars: [
+      { id: "pcv-row-1", description: "", amount: "" },
+      { id: "pcv-row-2", description: "", amount: "" },
+      { id: "pcv-row-3", description: "", amount: "" },
+    ],
+    requestedByName: "",
+    notedByName: "",
+    approvedByName: "",
+    receivedByName: "",
+  };
+};
+
 function RfpAppContent() {
   const searchParams = useSearchParams();
   const taskIdParam = searchParams.get("taskId");
 
   const [formData, setFormData] = useState<RfpFormData>(getInitialFormData);
+  const [poData, setPoData] = useState<PoFormData>(getInitialPoData);
+  const [pcvData, setPcvData] = useState<PcvFormData>(getInitialPcvData);
+  const [selectedForm, setSelectedForm] = useState<string>("rfp");
+  const [previousDraft, setPreviousDraft] = useState<RfpFormData | null>(null);
+  const [extractedBanner, setExtractedBanner] = useState<{
+    vendorName: string;
+    itemsCount: number;
+    totalAmount: number;
+  } | null>(null);
+
   const [rawSupportingFiles, setRawSupportingFiles] = useState<File[]>([]);
   const [supportingFilesList, setSupportingFilesList] = useState<SupportingFile[]>([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStage, setSubmissionStage] = useState<SubmissionStage>("rendering_pdf");
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Form Validation State
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [missingFieldsList, setMissingFieldsList] = useState<ValidationErrorItem[]>([]);
 
   // Success dialog state
   const [submissionResponse, setSubmissionResponse] = useState<SubmissionResponse | null>(null);
@@ -63,18 +161,36 @@ function RfpAppContent() {
   useEffect(() => {
     if (taskIdParam) {
       setFormData((prev) => ({ ...prev, taskId: taskIdParam }));
+      setPoData((prev) => ({ ...prev, taskId: taskIdParam }));
+      setPcvData((prev) => ({ ...prev, taskId: taskIdParam }));
       fetchTaskData(taskIdParam);
     } else {
       // Try restoring local draft if present
-      const saved = localStorage.getItem("prime_rfp_draft");
-      if (saved) {
+      const savedRfp = localStorage.getItem("prime_rfp_draft");
+      if (savedRfp) {
         try {
-          const parsed = JSON.parse(saved);
-          if (parsed && !parsed.taskId) {
-            setFormData(parsed);
-          }
+          const parsed = JSON.parse(savedRfp);
+          if (parsed && !parsed.taskId) setFormData(parsed);
         } catch (e) {
-          console.error("Failed to parse saved draft:", e);
+          console.error("Failed to parse saved RFP draft:", e);
+        }
+      }
+      const savedPo = localStorage.getItem("prime_po_draft");
+      if (savedPo) {
+        try {
+          const parsed = JSON.parse(savedPo);
+          if (parsed && !parsed.taskId) setPoData(parsed);
+        } catch (e) {
+          console.error("Failed to parse saved PO draft:", e);
+        }
+      }
+      const savedPcv = localStorage.getItem("prime_pcv_draft");
+      if (savedPcv) {
+        try {
+          const parsed = JSON.parse(savedPcv);
+          if (parsed && !parsed.taskId) setPcvData(parsed);
+        } catch (e) {
+          console.error("Failed to parse saved PCV draft:", e);
         }
       }
     }
@@ -87,14 +203,66 @@ function RfpAppContent() {
     }
   }, [formData]);
 
+  useEffect(() => {
+    if (!poData.taskId && poData.vendorName) {
+      localStorage.setItem("prime_po_draft", JSON.stringify(poData));
+    }
+  }, [poData]);
+
+  useEffect(() => {
+    if (!pcvData.taskId && pcvData.payee) {
+      localStorage.setItem("prime_pcv_draft", JSON.stringify(pcvData));
+    }
+  }, [pcvData]);
+
+  const getValidationResult = () => {
+    let result: ValidationResult;
+    if (selectedForm === "po") result = validatePoForm(poData);
+    else if (selectedForm === "pcv") result = validatePcvForm(pcvData);
+    else result = validateRfpForm(formData);
+
+    // Require attachments across all form types
+    const totalAttached = rawSupportingFiles.length + supportingFilesList.length;
+    if (totalAttached === 0) {
+      const attachError: ValidationErrorItem = {
+        id: "supporting-documents-section",
+        field: "supportingFiles",
+        label: "Supporting Documents",
+        message: "At least one vendor quotation, invoice, or receipt attachment is required.",
+      };
+      return {
+        isValid: false,
+        errors: { ...result.errors, supportingFiles: attachError.message },
+        items: [...result.items, attachError],
+      };
+    }
+
+    return result;
+  };
+
+  // Auto-clear resolved validation errors in real time
+  useEffect(() => {
+    if (missingFieldsList.length > 0) {
+      const res = getValidationResult();
+      setValidationErrors(res.errors);
+      setMissingFieldsList(res.items);
+    }
+  }, [formData, poData, pcvData, selectedForm, rawSupportingFiles, supportingFilesList]);
+
   const fetchTaskData = async (id: string) => {
     try {
       const res = await fetch(`/api/rfp/${id}`);
       if (res.ok) {
         const json = await res.json();
         if (json.task) {
-          // If custom fields are returned, can prefill further
           console.log("Loaded existing ClickUp task for revision:", json.task);
+          if (json.task.name?.includes("[PO]")) {
+            setSelectedForm("po");
+          } else if (json.task.name?.includes("[PCV]")) {
+            setSelectedForm("pcv");
+          } else {
+            setSelectedForm("rfp");
+          }
         }
       }
     } catch (e) {
@@ -102,38 +270,82 @@ function RfpAppContent() {
     }
   };
 
-  const handleAddItem = () => {
-    const newItem: RfpLineItem = {
-      id: Math.random().toString(36).substring(2, 9),
-      description: "",
-      qty: "",
-      unit: "",
-      unitPrice: "",
-      amount: 0,
-    };
-    setFormData((prev) => ({
-      ...prev,
-      items: [...prev.items, newItem],
-    }));
-  };
-
   const handleReset = () => {
-    if (confirm("Are you sure you want to reset this form? All unsaved inputs will be cleared.")) {
-      localStorage.removeItem("prime_rfp_draft");
-      setFormData(getInitialFormData());
+    const docName =
+      selectedForm === "po"
+        ? "Purchase Order"
+        : selectedForm === "pcv"
+        ? "Petty Cash Voucher"
+        : "Request for Payment";
+
+    if (confirm(`Are you sure you want to reset this ${docName}? All unsaved inputs will be cleared.`)) {
+      if (selectedForm === "po") {
+        localStorage.removeItem("prime_po_draft");
+        setPoData(getInitialPoData());
+      } else if (selectedForm === "pcv") {
+        localStorage.removeItem("prime_pcv_draft");
+        setPcvData(getInitialPcvData());
+      } else {
+        localStorage.removeItem("prime_rfp_draft");
+        setFormData(getInitialFormData());
+        setPreviousDraft(null);
+        setExtractedBanner(null);
+      }
       setRawSupportingFiles([]);
       setSupportingFilesList([]);
       setErrorMessage(null);
+      setValidationErrors({});
+      setMissingFieldsList([]);
     }
   };
 
   const handlePreviewPdf = async () => {
-    setIsGeneratingPdf(true);
     setErrorMessage(null);
+
+    // Validate form fields before PDF generation (attachments only required for ClickUp submission)
+    const validation =
+      selectedForm === "po"
+        ? validatePoForm(poData)
+        : selectedForm === "pcv"
+        ? validatePcvForm(pcvData)
+        : validateRfpForm(formData);
+
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      setMissingFieldsList(validation.items);
+      if (validation.items[0]) {
+        scrollToFormField(validation.items[0].id);
+      }
+      return;
+    }
+
+    setIsGeneratingPdf(true);
     try {
-      const { blob } = await generateRfpPdf("rfp-printable-sheet");
-      const sanitizedPayee = (formData.payee || "Payee").replace(/[^a-zA-Z0-9_-]/g, "_");
-      downloadPdfBlob(blob, `RFP_${sanitizedPayee}_${formData.date || "document"}.pdf`);
+      const elementId =
+        selectedForm === "po"
+          ? "po-printable-sheet"
+          : selectedForm === "pcv"
+          ? "pcv-printable-sheet"
+          : "rfp-printable-sheet";
+
+      const { blob } = await generateRfpPdf(elementId);
+
+      const prefix = selectedForm.toUpperCase();
+      const entity =
+        selectedForm === "po"
+          ? poData.vendorName || "Vendor"
+          : selectedForm === "pcv"
+          ? pcvData.payee || "Payee"
+          : formData.payee || "Payee";
+      const dateStr =
+        selectedForm === "po"
+          ? poData.date
+          : selectedForm === "pcv"
+          ? pcvData.date
+          : formData.date;
+
+      const sanitizedEntity = entity.replace(/[^a-zA-Z0-9_-]/g, "_");
+      downloadPdfBlob(blob, `${prefix}_${sanitizedEntity}_${dateStr || "document"}.pdf`);
     } catch (err: any) {
       console.error("PDF generation failed:", err);
       setErrorMessage("Failed to generate PDF. Please ensure all fields are properly formatted.");
@@ -142,47 +354,139 @@ function RfpAppContent() {
     }
   };
 
+  const handleDataExtracted = (extracted: Partial<RfpFormData>, file: File) => {
+    // Save current form data for Undo
+    setPreviousDraft({ ...formData });
+
+    // Populate form fields from quotation
+    setFormData((prev) => {
+      const updatedItems = extracted.items && extracted.items.length > 0 ? extracted.items : prev.items;
+      const computedTotal = updatedItems.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+
+      return {
+        ...prev,
+        payee: extracted.payee || prev.payee,
+        date: extracted.date || prev.date,
+        department: extracted.department || prev.department,
+        purpose: extracted.purpose || prev.purpose,
+        paymentMethod: extracted.paymentMethod || prev.paymentMethod,
+        paymentMethods: extracted.paymentMethod ? [extracted.paymentMethod] : prev.paymentMethods,
+        bank: extracted.bank || prev.bank,
+        accountName: extracted.accountName || prev.accountName,
+        accountNumber: extracted.accountNumber || prev.accountNumber,
+        urgency: extracted.urgency || prev.urgency,
+        urgencyOptions: extracted.urgency ? [extracted.urgency] : prev.urgencyOptions,
+        items: updatedItems,
+        totalAmount: computedTotal,
+      };
+    });
+
+    // Automatically register quotation as a supporting document
+    setRawSupportingFiles((prev) => [...prev, file]);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSupportingFilesList((prev) => [
+        ...prev,
+        {
+          id: Math.random().toString(36).substring(2, 9),
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          dataUrl: e.target?.result as string,
+        },
+      ]);
+    };
+    reader.readAsDataURL(file);
+
+    // Show extraction review banner
+    setExtractedBanner({
+      vendorName: extracted.payee || "Vendor",
+      itemsCount: extracted.items?.length || 0,
+      totalAmount: extracted.totalAmount || 0,
+    });
+  };
+
+  const handleUndoExtraction = () => {
+    if (previousDraft) {
+      setFormData(previousDraft);
+      setPreviousDraft(null);
+      setExtractedBanner(null);
+    }
+  };
+
   const handleSubmit = async () => {
     setErrorMessage(null);
 
-    // Validation
-    if (!formData.payee.trim()) {
-      setErrorMessage("Please specify the PAYEE name.");
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      return;
-    }
-
-    if (!formData.requestedByName.trim()) {
-      setErrorMessage("Please enter your printed name under 'Requested By'.");
-      return;
-    }
-
-    if (!formData.totalAmount || formData.totalAmount <= 0) {
-      setErrorMessage("Please add at least one line item with valid Quantity and Unit Price.");
+    // Field validation for active form
+    const validation = getValidationResult();
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors);
+      setMissingFieldsList(validation.items);
+      if (validation.items[0]) {
+        scrollToFormField(validation.items[0].id);
+      }
       return;
     }
 
     setIsSubmitting(true);
+    setSubmissionStage("rendering_pdf");
 
     try {
-      // 1. Generate official high-resolution PDF Blob
-      const { blob: pdfBlob } = await generateRfpPdf("rfp-printable-sheet");
+      const elementId =
+        selectedForm === "po"
+          ? "po-printable-sheet"
+          : selectedForm === "pcv"
+          ? "pcv-printable-sheet"
+          : "rfp-printable-sheet";
+
+      const activeData =
+        selectedForm === "po"
+          ? poData
+          : selectedForm === "pcv"
+          ? pcvData
+          : formData;
+
+      const prefix = selectedForm.toUpperCase();
+      const entity =
+        selectedForm === "po"
+          ? poData.vendorName || "Vendor"
+          : selectedForm === "pcv"
+          ? pcvData.payee || "Payee"
+          : formData.payee || "Payee";
+      const dateStr =
+        selectedForm === "po"
+          ? poData.date
+          : selectedForm === "pcv"
+          ? pcvData.date
+          : formData.date;
+      const sanitizedEntity = entity.replace(/[^a-zA-Z0-9_-]/g, "_");
+
+      // 1. Generate official high-resolution PDF Blob & visual preview image Blob
+      const { blob: pdfBlob } = await generateRfpPdf(elementId);
       setLastGeneratedPdf(pdfBlob);
+
+      const previewImageBlob = await generateRfpImageBlob(elementId);
+
+      // Advance stage to packaging attachments
+      setSubmissionStage("packaging_attachments");
+      await new Promise((r) => setTimeout(r, 400));
 
       // 2. Prepare multipart FormData payload
       const submissionData = new FormData();
-      submissionData.append("data", JSON.stringify(formData));
+      submissionData.append("formType", selectedForm);
+      submissionData.append("data", JSON.stringify(activeData));
 
-      // Append generated PDF
-      const sanitizedPayee = (formData.payee || "RFP").replace(/[^a-zA-Z0-9_-]/g, "_");
-      submissionData.append("pdf", pdfBlob, `RFP_${sanitizedPayee}_${formData.date}.pdf`);
+      submissionData.append("pdf", pdfBlob, `${prefix}_${sanitizedEntity}_${dateStr || "document"}.pdf`);
+      submissionData.append("previewImage", previewImageBlob, `${prefix}_${sanitizedEntity}_Preview.png`);
 
-      // Append all raw supporting files
       rawSupportingFiles.forEach((file) => {
         submissionData.append("supportingFiles", file);
       });
 
-      // 3. Post to backend
+      // Advance stage to ClickUp upload
+      setSubmissionStage("uploading_clickup");
+
+      // 3. Post to backend ClickUp route
       const res = await fetch("/api/rfp/submit", {
         method: "POST",
         body: submissionData,
@@ -191,14 +495,15 @@ function RfpAppContent() {
       const json: SubmissionResponse = await res.json();
 
       if (!res.ok || !json.success) {
-        throw new Error(json.message || "Failed to submit RFP to ClickUp");
+        throw new Error(json.message || `Failed to submit ${prefix} to ClickUp`);
       }
 
-      // Success
+      setSubmissionStage("finalizing");
+      await new Promise((r) => setTimeout(r, 450));
+
       setSubmissionResponse(json);
       setIsModalOpen(true);
 
-      // Trigger celebratory confetti
       confetti({
         particleCount: 80,
         spread: 70,
@@ -206,7 +511,9 @@ function RfpAppContent() {
       });
 
       // Clear draft
-      localStorage.removeItem("prime_rfp_draft");
+      if (selectedForm === "rfp") localStorage.removeItem("prime_rfp_draft");
+      if (selectedForm === "po") localStorage.removeItem("prime_po_draft");
+      if (selectedForm === "pcv") localStorage.removeItem("prime_pcv_draft");
     } catch (err: any) {
       console.error("Submission failed:", err);
       setErrorMessage(err.message || "Failed to complete submission. Please try again.");
@@ -215,56 +522,101 @@ function RfpAppContent() {
     }
   };
 
+  const activeTaskId =
+    selectedForm === "po"
+      ? poData.taskId
+      : selectedForm === "pcv"
+      ? pcvData.taskId
+      : formData.taskId;
+
+  const activeTotalAmount =
+    selectedForm === "po"
+      ? poData.totalAmountDue
+      : selectedForm === "pcv"
+      ? pcvData.amount
+      : formData.totalAmount;
+
+  const activePayeeName =
+    selectedForm === "po"
+      ? poData.vendorName
+      : selectedForm === "pcv"
+      ? pcvData.payee
+      : formData.payee;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-blue-50/40 text-slate-900 py-6 px-3 sm:px-6 flex flex-col items-center">
-      {/* Container */}
-      <div className="w-full max-w-5xl">
-        {/* Top App Header */}
-        <header className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 border-b border-slate-200 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-700 text-white rounded-xl shadow-md">
-              <Building2 className="w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                Prime Philippines RFP Portal
-              </h1>
-              <p className="text-xs text-slate-500">
-                Official Request for Payment generator & ClickUp automation workflow
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs text-slate-600 bg-white/80 backdrop-blur-xs px-3.5 py-1.5 rounded-full border border-slate-200 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-            <span className="font-semibold">ClickUp REST v2 Connected</span>
-          </div>
-        </header>
-
-        {/* Error banner */}
-        {errorMessage && (
-          <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 text-xs font-semibold flex items-center gap-2.5 animate-shake">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
-        {/* Floating Action Toolbar */}
+    <div className="min-h-screen bg-[#f8fafc] text-[#0C0C0E] py-6 px-3 sm:px-6 flex flex-col items-center">
+      {/* Container - Aligned to exact 850px document width */}
+      <div className="w-full max-w-[850px]">
+        {/* Single Compressed Topbar */}
         <Toolbar
-          onAddItem={handleAddItem}
           onPreviewPdf={handlePreviewPdf}
           onReset={handleReset}
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}
           isGeneratingPdf={isGeneratingPdf}
-          isRevision={Boolean(formData.taskId)}
-          taskId={formData.taskId}
-          totalAmount={formData.totalAmount}
+          isRevision={Boolean(activeTaskId)}
+          taskId={activeTaskId}
+          totalAmount={activeTotalAmount}
+          selectedForm={selectedForm}
+          onSelectForm={(formKey) => {
+            setSelectedForm(formKey);
+            setValidationErrors({});
+            setMissingFieldsList([]);
+            setErrorMessage(null);
+          }}
+        />
+
+        {/* Error banner */}
+        {errorMessage && (
+          <div className="mb-4 p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2.5 animate-shake">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        {/* AI Supplier Quotation Scanner (Dedicated for RFP) */}
+        {selectedForm === "rfp" && <QuotationDropzone onDataExtracted={handleDataExtracted} />}
+
+        {/* Extraction Review & Undo Banner */}
+        {selectedForm === "rfp" && extractedBanner && (
+          <ExtractionBanner
+            vendorName={extractedBanner.vendorName}
+            itemsCount={extractedBanner.itemsCount}
+            totalAmount={extractedBanner.totalAmount}
+            onUndo={handleUndoExtraction}
+            onDismiss={() => setExtractedBanner(null)}
+          />
+        )}
+
+        {/* Interactive Validation Warning Banner */}
+        <ValidationAlertBanner
+          items={missingFieldsList}
+          onDismiss={() => setMissingFieldsList([])}
         />
 
         {/* Document First Paper Sheet */}
         <main className="mb-8">
-          <RfpSheet data={formData} onChange={setFormData} />
+          {selectedForm === "rfp" && (
+            <RfpSheet
+              data={formData}
+              onChange={setFormData}
+              validationErrors={validationErrors}
+            />
+          )}
+          {selectedForm === "po" && (
+            <PoSheet
+              data={poData}
+              onChange={setPoData}
+              validationErrors={validationErrors}
+            />
+          )}
+          {selectedForm === "pcv" && (
+            <PcvSheet
+              data={pcvData}
+              onChange={setPcvData}
+              validationErrors={validationErrors}
+            />
+          )}
         </main>
 
         {/* Supporting Documents Section */}
@@ -274,17 +626,20 @@ function RfpAppContent() {
             onFilesChange={setSupportingFilesList}
             rawFiles={rawSupportingFiles}
             onRawFilesChange={setRawSupportingFiles}
+            hasError={Boolean(validationErrors["supportingFiles"])}
           />
         </section>
-
-        {/* Bottom footer */}
-        <footer className="text-center text-xs text-slate-400 py-6 border-t border-slate-200">
-          <p>© {new Date().getFullYear()} Property Interactive Marketing Enterprise Realty Corp. (PRIME Philippines)</p>
-          <p className="mt-1 text-[11px] text-slate-400">
-            Form Frontend Wrapper for ClickUp • Next.js & Vercel Ready
-          </p>
-        </footer>
       </div>
+
+      {/* Submission Loading Animation Overlay */}
+      <SubmissionLoadingModal
+        isOpen={isSubmitting}
+        stage={submissionStage}
+        entityName={activePayeeName}
+        totalAmount={activeTotalAmount}
+        attachmentsCount={rawSupportingFiles.length || supportingFilesList.length}
+        isRevision={Boolean(activeTaskId)}
+      />
 
       {/* Submission Success / Confirmation Modal */}
       <SubmissionModal
@@ -292,7 +647,7 @@ function RfpAppContent() {
         onClose={() => setIsModalOpen(false)}
         response={submissionResponse}
         pdfBlob={lastGeneratedPdf}
-        payeeName={formData.payee}
+        payeeName={activePayeeName}
       />
     </div>
   );
@@ -303,7 +658,7 @@ export default function Page() {
     <Suspense
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500 text-sm">
-          Loading RFP Portal...
+          Loading Forms Portal...
         </div>
       }
     >

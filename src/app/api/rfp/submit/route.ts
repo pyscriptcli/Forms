@@ -1,15 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
-import { RfpFormData } from "@/types/rfp";
+import { RfpFormData, FormType } from "@/types/rfp";
 import {
   createClickUpTask,
   updateClickUpTask,
   uploadAttachmentToTask,
 } from "@/lib/clickup";
+import { sendApproverNotification } from "@/lib/email";
+
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const dataStr = formData.get("data") as string;
+    const formType = ((formData.get("formType") as string) || "rfp") as FormType;
 
     if (!dataStr) {
       return NextResponse.json(
@@ -18,7 +22,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data: RfpFormData = JSON.parse(dataStr);
+    const data: any = JSON.parse(dataStr);
 
     // Determine application base URL
     const host = req.headers.get("host") || "localhost:3000";
@@ -29,30 +33,59 @@ export async function POST(req: NextRequest) {
     const isRevision = Boolean(data.taskId);
 
     if (isRevision && data.taskId) {
-      taskResult = await updateClickUpTask(data.taskId, data, appUrl);
+      taskResult = await updateClickUpTask(data.taskId, data, appUrl, formType);
     } else {
-      taskResult = await createClickUpTask(data, appUrl);
+      taskResult = await createClickUpTask(data, appUrl, formType);
     }
 
     const taskId = taskResult.id;
 
-    // 1. Upload generated official PDF if provided
-    const pdfBlob = formData.get("pdf") as File | null;
-    if (pdfBlob && taskId) {
-      const sanitizedPayee = (data.payee || "Request").replace(/[^a-zA-Z0-9_-]/g, "_");
-      const pdfFilename = `RFP_${sanitizedPayee}_${data.date || "document"}.pdf`;
-      await uploadAttachmentToTask(taskId, pdfBlob, pdfFilename);
-    }
+    if (taskId) {
+      const typeLabel = formType.toUpperCase();
+      const entityName = formType === "po" ? (data.vendorName || "Vendor") : (data.payee || "Payee");
+      const sanitizedName = entityName.replace(/[^a-zA-Z0-9_-]/g, "_");
 
-    // 2. Upload any supporting documents
-    const supportingFiles = formData.getAll("supportingFiles") as File[];
-    if (supportingFiles && supportingFiles.length > 0 && taskId) {
-      for (const file of supportingFiles) {
-        if (file && file.size > 0) {
-          await uploadAttachmentToTask(taskId, file, file.name);
+      // 1. Upload high-res visual preview image of the form (appears in ClickUp right sidebar)
+      const previewImageBlob = formData.get("previewImage") as File | null;
+      if (previewImageBlob) {
+        const previewFilename = `${typeLabel}_${sanitizedName}_Preview.png`;
+        await uploadAttachmentToTask(taskId, previewImageBlob, previewFilename);
+      }
+
+      // 2. Upload official generated PDF document
+      const pdfBlob = formData.get("pdf") as File | null;
+      if (pdfBlob) {
+        const pdfFilename = `${typeLabel}_${sanitizedName}_${data.date || "document"}.pdf`;
+        await uploadAttachmentToTask(taskId, pdfBlob, pdfFilename);
+      }
+
+      // 3. Upload all supporting documents
+      const supportingFiles = formData.getAll("supportingFiles") as File[];
+      if (supportingFiles && supportingFiles.length > 0) {
+        for (const file of supportingFiles) {
+          if (file && file.size > 0) {
+            await uploadAttachmentToTask(taskId, file, file.name);
+          }
+        }
+      }
+
+      // 4. Dispatch Outlook email notification to Approver if applicable
+      if (formType === "rfp" && (data.approverEmail || data.approverName || data.approvedByName)) {
+        try {
+          await sendApproverNotification({
+            approverEmail: data.approverEmail,
+            approverName: data.approverName || data.approvedByName,
+            data,
+            taskId,
+            appUrl,
+          });
+        } catch (emailErr) {
+          console.warn("Could not dispatch approver notification email:", emailErr);
         }
       }
     }
+
+    const docName = formType === "po" ? "Purchase Order (PO)" : formType === "pcv" ? "Petty Cash Voucher (PCV)" : "Request for Payment (RFP)";
 
     return NextResponse.json({
       success: true,
@@ -60,8 +93,8 @@ export async function POST(req: NextRequest) {
       taskUrl: taskResult.url,
       isMock: taskResult.isMock || false,
       message: isRevision
-        ? "RFP revised and updated in ClickUp successfully!"
-        : "RFP submitted and created in ClickUp successfully!",
+        ? `${docName} revised and updated in ClickUp successfully!`
+        : `${docName} submitted and created in ClickUp successfully!`,
       taskData: taskResult,
     });
   } catch (error: any) {

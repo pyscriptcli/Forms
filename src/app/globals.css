@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8fafc;
+  --foreground: #0c0c0e;
+  --prime-blue: #003366;
+  --prime-gold: #c9ab4c;
+  --prime-dark: #0c0c0e;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-serif: var(--font-cormorant), Georgia, serif;
+  --font-bebas: var(--font-bebas), sans-serif;
+  --font-sans: var(--font-montserrat), system-ui, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-montserrat), system-ui, sans-serif;
+}
+
+.font-serif {
+  font-family: var(--font-cormorant), Georgia, serif;
+}
+
+.font-bebas {
+  font-family: var(--font-bebas), sans-serif;
+  letter-spacing: 0.04em;
+}
+
+/* Edgy architectural styles */
+.edgy-btn-primary {
+  background-color: #003366;
+  color: #ffffff;
+  border-radius: 0px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  border: 1px solid #003366;
+}
+
+.edgy-btn-primary:hover {
+  background-color: #002244;
+  border-color: #c9ab4c;
+}
+
+.edgy-btn-outline {
+  background-color: transparent;
+  color: #003366;
+  border-radius: 0px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  border: 1px solid #cbd5e1;
+}
+
+.edgy-btn-outline:hover {
+  border-color: #c9ab4c;
+  color: #c9ab4c;
 }

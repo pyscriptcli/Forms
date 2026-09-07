@@ -9,6 +9,7 @@ interface SupportingDocumentsProps {
   onFilesChange: (files: SupportingFile[]) => void;
   rawFiles: File[];
   onRawFilesChange: (rawFiles: File[]) => void;
+  hasError?: boolean;
 }
 
 export function SupportingDocuments({
@@ -16,6 +17,7 @@ export function SupportingDocuments({
   onFilesChange,
   rawFiles,
   onRawFilesChange,
+  hasError = false,
 }: SupportingDocumentsProps) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -64,25 +66,51 @@ export function SupportingDocuments({
   };
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+    <div
+      id="supporting-documents-section"
+      className={`bg-white rounded-none border ${
+        hasError
+          ? "border-rose-500 ring-2 ring-rose-400/40 bg-rose-50/10"
+          : "border-slate-300"
+      } shadow-sm p-6 relative overflow-hidden transition-all`}
+    >
+      {/* Gold top accent */}
+      <div className={`absolute top-0 left-0 right-0 h-1 ${hasError ? "bg-rose-500" : "bg-[#C9AB4C]"}`} />
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2.5">
-          <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+          <div className="p-2 bg-[#003366] text-[#C9AB4C] rounded-none">
             <Paperclip className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-slate-800">
-              Supporting Documents
-            </h3>
-            <p className="text-xs text-slate-500">
-              Attach receipts, vendor quotations, invoices, or statements of account
+            <div className="flex items-center gap-2">
+              <h3 className="font-serif italic font-bold text-base text-[#003366]">
+                Supporting Documents
+              </h3>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-rose-100 text-rose-700 border border-rose-200">
+                Required
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Attach vendor quotations, invoices, receipts, or official SOA before submitting
             </p>
           </div>
         </div>
-        <span className="text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full">
+        <span className={`text-xs font-semibold px-2.5 py-1 ${
+          hasError
+            ? "bg-rose-50 text-rose-700 border border-rose-300 font-bold"
+            : "bg-slate-100 text-slate-700 border border-slate-200"
+        }`}>
           {files.length} {files.length === 1 ? "file" : "files"} attached
         </span>
       </div>
+
+      {hasError && (
+        <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold flex items-center gap-2 animate-pulse">
+          <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
+          <span>Attachment required: Please upload at least one vendor quotation, invoice, or receipt before submitting to ClickUp.</span>
+        </div>
+      )}
 
       {/* Dropzone */}
       <div
@@ -96,11 +124,15 @@ export function SupportingDocuments({
           e.stopPropagation();
           handleFileSelection(e.dataTransfer.files);
         }}
-        className="border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50/20 rounded-xl p-6 text-center cursor-pointer transition-all"
+        className={`border-2 border-dashed ${
+          hasError
+            ? "border-rose-400 bg-rose-50/30 hover:border-rose-500"
+            : "border-slate-300 hover:border-[#C9AB4C] hover:bg-[#003366]/5"
+        } rounded-none p-6 text-center cursor-pointer transition-all`}
       >
-        <UploadCloud className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+        <UploadCloud className="w-8 h-8 text-[#003366]/50 mx-auto mb-2" />
         <p className="text-sm font-semibold text-slate-700">
-          Click to upload or drag & drop files here
+          Click to upload or drag & drop supporting files here
         </p>
         <p className="text-xs text-slate-500 mt-1">
           Supports PDF, PNG, JPG, and DOCX (up to 25MB each)
@@ -121,10 +153,10 @@ export function SupportingDocuments({
           {files.map((file, idx) => (
             <div
               key={file.id || idx}
-              className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100/80 transition-colors"
+              className="flex items-center justify-between p-3 rounded-none border border-slate-300 bg-slate-50 hover:bg-slate-100/80 transition-colors"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                <div className="p-2 bg-white rounded-md shadow-xs text-blue-600 shrink-0">
+                <div className="p-2 bg-white border border-slate-200 text-[#003366] shrink-0">
                   {file.type.includes("image") ? (
                     <ImageIcon className="w-4 h-4" />
                   ) : (
@@ -132,10 +164,10 @@ export function SupportingDocuments({
                   )}
                 </div>
                 <div className="truncate">
-                  <p className="text-sm font-medium text-slate-800 truncate" title={file.name}>
+                  <p className="text-xs font-semibold text-slate-800 truncate" title={file.name}>
                     {file.name}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[10px] text-slate-500 font-mono">
                     {formatFileSize(file.size)}
                   </p>
                 </div>
@@ -147,7 +179,7 @@ export function SupportingDocuments({
                     href={file.dataUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded transition-colors"
+                    className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white transition-colors"
                     title="Preview file"
                   >
                     <Eye className="w-4 h-4" />
@@ -156,7 +188,7 @@ export function SupportingDocuments({
                 <button
                   type="button"
                   onClick={() => removeFile(idx)}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                   title="Remove file"
                 >
                   <Trash2 className="w-4 h-4" />

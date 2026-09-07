@@ -26,24 +26,21 @@ export function SignatureModal({
 
   useEffect(() => {
     if (isOpen && activeTab === "draw") {
-      // Small timeout to allow canvas element to mount
       setTimeout(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // Set canvas resolution matching displayed width/height
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width * 2;
         canvas.height = rect.height * 2;
         ctx.scale(2, 2);
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        ctx.strokeStyle = "#0f172a";
+        ctx.strokeStyle = "#003366";
         ctx.lineWidth = 2.5;
 
-        // If currentSignature exists and is from drawing, draw it
         if (currentSignature && !uploadedImage) {
           const img = new Image();
           img.onload = () => {
@@ -136,46 +133,51 @@ export function SignatureModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-white rounded-none shadow-2xl border-2 border-[#003366] flex flex-col relative overflow-hidden">
+        {/* Top Gold Accent Line */}
+        <div className="h-[3px] bg-[#C9AB4C] w-full" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50">
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Add E-Signature</h3>
-            <p className="text-xs text-slate-500">Sign digitally or upload your signature image</p>
+            <h3 className="font-serif italic font-bold text-lg text-[#003366]">
+              Add Digital E-Signature
+            </h3>
+            <p className="text-xs text-slate-500">Sign directly on canvas or upload signature image</p>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-slate-200 bg-slate-100/50">
+        <div className="flex border-b border-slate-200 bg-slate-100/60">
           <button
             type="button"
             onClick={() => setActiveTab("draw")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
               activeTab === "draw"
-                ? "border-blue-600 text-blue-600 bg-white"
+                ? "border-[#003366] text-[#003366] bg-white"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Pen className="w-4 h-4" />
+            <Pen className="w-3.5 h-3.5" />
             Draw Signature
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("upload")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold border-b-2 transition-all ${
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-xs font-bold uppercase tracking-wider border-b-2 transition-all cursor-pointer ${
               activeTab === "upload"
-                ? "border-blue-600 text-blue-600 bg-white"
+                ? "border-[#003366] text-[#003366] bg-white"
                 : "border-transparent text-slate-600 hover:text-slate-900"
             }`}
           >
-            <Upload className="w-4 h-4" />
+            <Upload className="w-3.5 h-3.5" />
             Upload Image
           </button>
         </div>
@@ -184,7 +186,7 @@ export function SignatureModal({
         <div className="p-6">
           {activeTab === "draw" ? (
             <div className="flex flex-col gap-3">
-              <div className="relative border-2 border-dashed border-slate-300 rounded-lg bg-slate-50 overflow-hidden select-none touch-none">
+              <div className="relative border-2 border-dashed border-slate-300 rounded-none bg-slate-50 overflow-hidden select-none touch-none">
                 <canvas
                   ref={canvasRef}
                   onMouseDown={startDrawing}
@@ -197,14 +199,14 @@ export function SignatureModal({
                   className="w-full h-44 cursor-crosshair bg-white"
                 />
                 <div className="absolute bottom-2 left-3 pointer-events-none text-[11px] text-slate-400">
-                  Draw signature above using mouse or finger
+                  Draw signature above using mouse, touch, or stylus
                 </div>
               </div>
               <div className="flex justify-end">
                 <button
                   type="button"
                   onClick={clearCanvas}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-slate-600 hover:text-rose-600 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   Clear Pad
@@ -214,7 +216,7 @@ export function SignatureModal({
           ) : (
             <div className="flex flex-col gap-4">
               {uploadedImage ? (
-                <div className="relative border-2 border-slate-200 rounded-lg p-4 bg-slate-50 flex items-center justify-center h-44">
+                <div className="relative border-2 border-slate-300 rounded-none p-4 bg-slate-50 flex items-center justify-center h-44">
                   <img
                     src={uploadedImage}
                     alt="Signature preview"
@@ -223,21 +225,21 @@ export function SignatureModal({
                   <button
                     type="button"
                     onClick={() => setUploadedImage(null)}
-                    className="absolute top-2 right-2 p-1 bg-white rounded-full shadow hover:bg-slate-100 text-slate-500"
+                    className="absolute top-2 right-2 p-1 bg-white border border-slate-300 text-slate-500 hover:text-rose-600 cursor-pointer"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
-                <label className="border-2 border-dashed border-slate-300 rounded-lg h-44 flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/20 transition-all">
-                  <div className="p-3 bg-blue-50 text-blue-600 rounded-full mb-2">
+                <label className="border-2 border-dashed border-slate-300 rounded-none h-44 flex flex-col items-center justify-center cursor-pointer hover:border-[#C9AB4C] hover:bg-[#003366]/5 transition-all">
+                  <div className="p-3 bg-slate-100 text-[#003366] rounded-none mb-2">
                     <ImageIcon className="w-6 h-6" />
                   </div>
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
                     Click to select signature image
                   </span>
-                  <span className="text-xs text-slate-500 mt-0.5">
-                    PNG (transparent recommended) or JPG up to 5MB
+                  <span className="text-[11px] text-slate-500 mt-1">
+                    PNG (transparent background) or JPG
                   </span>
                   <input
                     type="file"
@@ -252,11 +254,11 @@ export function SignatureModal({
         </div>
 
         {/* Footer actions */}
-        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 rounded-lg transition-colors"
+            className="edgy-btn-outline px-4 py-2 text-xs cursor-pointer"
           >
             Cancel
           </button>
@@ -264,9 +266,9 @@ export function SignatureModal({
             type="button"
             onClick={handleSave}
             disabled={activeTab === "draw" ? !hasDrawing : !uploadedImage}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow disabled:opacity-50 disabled:cursor-not-allowed"
+            className="edgy-btn-primary px-5 py-2 text-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-3.5 h-3.5 text-[#C9AB4C]" />
             Apply Signature
           </button>
         </div>

@@ -1,4 +1,10 @@
-import { RfpFormData, ClickUpTaskResponse } from "@/types/rfp";
+import {
+  RfpFormData,
+  PoFormData,
+  PcvFormData,
+  ClickUpTaskResponse,
+  FormType,
+} from "@/types/rfp";
 
 const CLICKUP_API_BASE = "https://api.clickup.com/api/v2";
 
@@ -12,63 +18,153 @@ export function getClickUpConfig() {
 /**
  * Builds a clear, structured Markdown summary of the RFP for the ClickUp task description.
  */
-export function buildTaskDescription(data: RfpFormData, appUrl: string, taskId?: string): string {
+export function buildTaskDescription(data: RfpFormData): string {
   const formattedTotal = Number(data.totalAmount || 0).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
+  const methodsDisplay =
+    data.paymentMethods && data.paymentMethods.length > 0
+      ? data.paymentMethods.map((m) => (m === "online" ? "Online Payment / Bank Transfer" : m.toUpperCase())).join(", ")
+      : data.paymentMethod
+      ? data.paymentMethod === "online" ? "Online Payment / Bank Transfer" : data.paymentMethod.toUpperCase()
+      : "N/A";
+
+  const isUrgent =
+    data.urgency === "urgent" || (data.urgencyOptions && data.urgencyOptions.includes("urgent"));
+  const urgencyDisplay = isUrgent ? "🚨 URGENT" : "Normal";
+
+  // Clean payment and bank details display
+  const bankParts = [
+    data.bank && data.bank !== "N/A" ? `Bank: ${data.bank}` : "",
+    data.accountName && data.accountName !== "N/A" ? `Acct Name: ${data.accountName}` : "",
+    data.accountNumber && data.accountNumber !== "N/A" ? `Acct #: ${data.accountNumber}` : "",
+  ].filter(Boolean);
+
+  const paymentDetails =
+    bankParts.length > 0 ? `${methodsDisplay} (${bankParts.join(" • ")})` : methodsDisplay;
+
   const lines = [
     `# 📋 Request for Payment (RFP)`,
-    `**Payee:** ${data.payee || "N/A"}`,
-    `**Department:** ${data.department || "N/A"}`,
-    `**Date Requested:** ${data.date || "N/A"}`,
-    `**Date Needed:** ${data.dateNeeded || "N/A"}`,
-    `**Priority / Urgency:** ${data.urgency === "urgent" ? "🚨 URGENT" : "Normal"}`,
+    "",
+    `| Field | Details |`,
+    `| :--- | :--- |`,
+    `| **Total Payable** | **₱${formattedTotal}** |`,
+    `| **Payee** | **${data.payee || "N/A"}** |`,
+    `| **Department** | ${data.department || "N/A"} |`,
+    `| **Date Needed** | **${data.dateNeeded || "N/A"}** (${urgencyDisplay}) |`,
+    `| **Payment Details** | ${paymentDetails} |`,
+    `| **Purpose** | ${data.purpose ? data.purpose.replace(/\n/g, " ") : "_No purpose stated._"} |`,
+    `| **Requested By** | **${data.requestedByName || "N/A"}** (Date: ${data.date || "N/A"}) |`,
     "",
     `---`,
-    `### 💰 Payment Details`,
-    `- **Payment Method:** ${data.paymentMethod ? data.paymentMethod.toUpperCase() : "N/A"}`,
-    `- **Bank:** ${data.bank || "N/A"}`,
-    `- **Account Name:** ${data.accountName || "N/A"}`,
-    `- **Account Number:** ${data.accountNumber || "N/A"}`,
-    "",
-    `---`,
-    `### 🎯 Purpose`,
-    data.purpose || "_No purpose stated._",
-    "",
-    `---`,
-    `### 📦 Line Items`,
-    `| Description | Qty | Unit | Unit Price | Amount |`,
-    `| :--- | :---: | :---: | :---: | :---: |`,
+    `### 🔄 Processing Checklist`,
+    `- [ ] **1. Department / Team Leader Endorsement** — Verified requirement & purpose`,
+    `- [ ] **2. Finance Verification** — Encoded in Zoho & Top Sheet prepared`,
+    `- [ ] **3. Disbursement Preparation** — Uploaded to UnionBank (UB) / Check prepared`,
+    `- [ ] **4. Executive Sign-Off** — CFO / CEO reviewed & signed`,
+    `- [ ] **5. Payment Released & Completed** — Proof of payment sent & filed`,
   ];
 
-  if (data.items && data.items.length > 0) {
-    data.items.forEach((item) => {
-      const unitPrice = item.unitPrice !== "" ? Number(item.unitPrice).toLocaleString("en-US", { minimumFractionDigits: 2 }) : "0.00";
-      const amount = Number(item.amount || 0).toLocaleString("en-US", { minimumFractionDigits: 2 });
-      lines.push(`| ${item.description || "—"} | ${item.qty || 0} | ${item.unit || "—"} | ₱${unitPrice} | ₱${amount} |`);
-    });
-  } else {
-    lines.push(`| _No line items specified_ | - | - | - | - |`);
-  }
+  return lines.join("\n");
+}
 
-  lines.push(`| **TOTAL AMOUNT** | | | | **₱${formattedTotal}** |`);
-  lines.push("");
-  lines.push(`---`);
-  lines.push(`### ✍️ Requestor Sign-Off`);
-  lines.push(`- **Requested By:** ${data.requestedByName || "N/A"}`);
-  lines.push(`- **Email:** ${data.requestedByEmail || "N/A"}`);
-  lines.push(`- **Requestor Remarks:** ${data.requestedByRemarks || "None"}`);
-  lines.push(`- **Signature:** ${data.signatureDataUrl ? "Attached to official generated PDF" : "Typed Name"}`);
-  lines.push("");
+/**
+ * Builds a clear, structured Markdown summary of the Purchase Order for the ClickUp task description.
+ */
+export function buildPoTaskDescription(data: PoFormData): string {
+  const formattedTotal = Number(data.totalAmountDue || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const formattedSubtotal = Number(data.subtotal || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const formattedVat = Number(data.vatAmount || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const formattedEwt = Number(data.withholdingTaxAmount || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 
-  if (taskId) {
-    lines.push(`---`);
-    lines.push(`### 🔄 Revision & Workflow`);
-    lines.push(`Need the requestor to edit or adjust line items? Share this direct edit link:`);
-    lines.push(`👉 **[Open Form for Revision / Editing](${appUrl}?taskId=${taskId})**`);
-  }
+  const isUrgent = data.urgency === "urgent";
+  const urgencyDisplay = isUrgent ? "🚨 URGENT" : "Normal";
+
+  const lines = [
+    `# 📦 Purchase Order (PO)`,
+    "",
+    `| Field | Details |`,
+    `| :--- | :--- |`,
+    `| **Total Amount Due** | **₱${formattedTotal}** |`,
+    `| **Vendor Name** | **${data.vendorName || "N/A"}** |`,
+    `| **PO Number** | **${data.poNumber || "N/A"}** |`,
+    `| **Department** | ${data.department || "N/A"} |`,
+    `| **Date Needed** | **${data.dateNeeded || "N/A"}** (${urgencyDisplay}) |`,
+    `| **Vendor TIN** | ${data.tin || "N/A"} |`,
+    `| **Contact / Acct Mgr** | ${[data.accountManager, data.contactNo, data.emailAddress].filter(Boolean).join(" • ") || "N/A"} |`,
+    `| **Financial Breakdown** | Subtotal: ₱${formattedSubtotal} • VAT (12%): ₱${formattedVat} • EWT (2%): ₱${formattedEwt} |`,
+    `| **Notes** | ${data.additionalNotes ? data.additionalNotes.replace(/\n/g, " ") : "_No additional notes._"} |`,
+    `| **Prepared By** | **${data.preparedByName || "N/A"}** (Date: ${data.date || "N/A"}) |`,
+    "",
+    `---`,
+    `### 🔄 Processing Checklist`,
+    `- [ ] **1. Department / Team Leader Endorsement** — Verified requirement & purpose`,
+    `- [ ] **2. Finance Verification** — Encoded in Zoho & Top Sheet prepared`,
+    `- [ ] **3. Disbursement Preparation** — Uploaded to UnionBank (UB) / Check prepared`,
+    `- [ ] **4. Executive Sign-Off** — CFO / CEO reviewed & signed`,
+    `- [ ] **5. Payment Released & Completed** — Proof of payment sent & filed`,
+  ];
+
+  return lines.join("\n");
+}
+
+/**
+ * Builds a clear, structured Markdown summary of the Petty Cash Voucher for the ClickUp task description.
+ */
+export function buildPcvTaskDescription(data: PcvFormData): string {
+  const formattedAmount = Number(data.amount || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  const isUrgent = data.urgency === "urgent";
+  const urgencyDisplay = isUrgent ? "🚨 URGENT" : "Normal";
+
+  const particularsSummary =
+    data.particulars && data.particulars.length > 0
+      ? data.particulars
+          .map(
+            (p) =>
+              `${p.description || "Item"} (₱${Number(p.amount || 0).toLocaleString("en-US")})`
+          )
+          .join(" • ")
+      : "None listed";
+
+  const lines = [
+    `# 💵 Petty Cash Voucher (PCV)`,
+    "",
+    `| Field | Details |`,
+    `| :--- | :--- |`,
+    `| **Amount** | **₱${formattedAmount}** |`,
+    `| **Payee (Employee)** | **${data.payee || "N/A"}** |`,
+    `| **Department** | ${data.department || "N/A"} |`,
+    `| **Voucher No** | **${data.voucherNo || "N/A"}** |`,
+    `| **Date** | ${data.date || "N/A"} (${urgencyDisplay}) |`,
+    `| **Particulars** | ${particularsSummary} |`,
+    `| **Requested By** | **${data.requestedByName || "N/A"}** |`,
+    "",
+    `---`,
+    `### 🔄 Processing Checklist`,
+    `- [ ] **1. Department / Team Leader Endorsement** — Verified requirement & purpose`,
+    `- [ ] **2. Finance Verification** — Encoded in Zoho & Top Sheet prepared`,
+    `- [ ] **3. Disbursement Preparation** — Uploaded to UnionBank (UB) / Check prepared`,
+    `- [ ] **4. Executive Sign-Off** — CFO / CEO reviewed & signed`,
+    `- [ ] **5. Payment Released & Completed** — Proof of payment sent & filed`,
+  ];
 
   return lines.join("\n");
 }
@@ -127,38 +223,74 @@ async function getMatchingCustomFields(listId: string, token: string, data: RfpF
  * Creates a new ClickUp Task for the RFP.
  */
 export async function createClickUpTask(
-  data: RfpFormData,
-  appUrl: string
+  data: any,
+  appUrl: string,
+  formType: FormType = "rfp"
 ): Promise<ClickUpTaskResponse> {
   const { token, listId, isConfigured } = getClickUpConfig();
 
+  const isUrgent =
+    data.urgency === "urgent" || (data.urgencyOptions && data.urgencyOptions.includes("urgent"));
+  const priorityPrefix = isUrgent ? "🚨 [URGENT] " : "";
+
+  let taskName = "";
+  let desc = "";
+
+  if (formType === "po" || data.formType === "po") {
+    const formattedTotal = Number(data.totalAmountDue || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[PO] ${data.vendorName || "Untitled Vendor"} — ₱${formattedTotal} (${data.department || "Procurement"})`;
+    desc = buildPoTaskDescription(data as PoFormData);
+  } else if (formType === "pcv" || data.formType === "pcv") {
+    const formattedTotal = Number(data.amount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[PCV] ${data.payee || "Employee"} — ₱${formattedTotal} (${data.department || "General"})`;
+    desc = buildPcvTaskDescription(data as PcvFormData);
+  } else {
+    const formattedTotal = Number(data.totalAmount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[RFP] ${data.payee || "Untitled Payee"} — ₱${formattedTotal} (${data.department || "General"})`;
+    desc = buildTaskDescription(data as RfpFormData);
+  }
+
   if (!isConfigured) {
-    // Return mock task response for zero-friction prototyping
     const mockId = "MOCK-" + Math.floor(100000 + Math.random() * 900000);
     return {
       id: mockId,
-      name: `RFP: ${data.payee || "Payee"} - ₱${Number(data.totalAmount || 0).toLocaleString()} (${data.department || "Dept"})`,
+      name: taskName,
       url: `https://app.clickup.com/t/${mockId}`,
       isMock: true,
-      status: { status: "pending review", color: "#f59e0b" },
+      status: { status: "for approval", color: "#f59e0b" },
     };
   }
 
-  const taskName = `RFP: ${data.payee || "Untitled"} - ₱${Number(data.totalAmount || 0).toLocaleString()} (${data.department || "General"})`;
-  // Urgency: 1 = Urgent, 2 = High, 3 = Normal, 4 = Low
-  const priority = data.urgency === "urgent" ? 1 : 3;
-
-  // Placeholder edit url before task ID is generated, will update task description after creation
-  const tempDesc = buildTaskDescription(data, appUrl);
+  const priority = isUrgent ? 1 : 3;
 
   const body: any = {
     name: taskName,
-    description: tempDesc,
+    description: desc,
+    markdown_description: desc,
+    status: "for approval",
     priority,
     notify_all: true,
   };
 
-  // 1. Create task
+  // Sync Due Date to ClickUp if dateNeeded is provided
+  if (data.dateNeeded) {
+    const dueDateMs = new Date(data.dateNeeded).getTime();
+    if (!isNaN(dueDateMs)) {
+      body.due_date = dueDateMs;
+      body.due_date_time = false;
+    }
+  }
+
+  // 1. Create task with initial status "for approval"
   const createRes = await fetch(`${CLICKUP_API_BASE}/list/${listId}/task`, {
     method: "POST",
     headers: {
@@ -177,22 +309,6 @@ export async function createClickUpTask(
   const taskId = createdTask.id;
   const taskUrl = createdTask.url || `https://app.clickup.com/t/${taskId}`;
 
-  // 2. Update description with the exact revision edit link
-  const finalDesc = buildTaskDescription(data, appUrl, taskId);
-  const customFields = await getMatchingCustomFields(listId, token, data, `${appUrl}?taskId=${taskId}`);
-
-  await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
-    method: "PUT",
-    headers: {
-      Authorization: token,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      description: finalDesc,
-      custom_fields: customFields,
-    }),
-  });
-
   return {
     id: taskId,
     name: taskName,
@@ -207,25 +323,68 @@ export async function createClickUpTask(
  */
 export async function updateClickUpTask(
   taskId: string,
-  data: RfpFormData,
-  appUrl: string
+  data: any,
+  appUrl: string,
+  formType: FormType = "rfp"
 ): Promise<ClickUpTaskResponse> {
   const { token, listId, isConfigured } = getClickUpConfig();
+
+  const isUrgent =
+    data.urgency === "urgent" || (data.urgencyOptions && data.urgencyOptions.includes("urgent"));
+  const priorityPrefix = isUrgent ? "🚨 [URGENT] " : "";
+
+  let taskName = "";
+  let desc = "";
+
+  if (formType === "po" || data.formType === "po") {
+    const formattedTotal = Number(data.totalAmountDue || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[PO - Revised] ${data.vendorName || "Untitled Vendor"} — ₱${formattedTotal} (${data.department || "Procurement"})`;
+    desc = buildPoTaskDescription(data as PoFormData);
+  } else if (formType === "pcv" || data.formType === "pcv") {
+    const formattedTotal = Number(data.amount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[PCV - Revised] ${data.payee || "Employee"} — ₱${formattedTotal} (${data.department || "General"})`;
+    desc = buildPcvTaskDescription(data as PcvFormData);
+  } else {
+    const formattedTotal = Number(data.totalAmount || 0).toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    taskName = `${priorityPrefix}[RFP - Revised] ${data.payee || "Untitled Payee"} — ₱${formattedTotal} (${data.department || "General"})`;
+    desc = buildTaskDescription(data as RfpFormData);
+  }
 
   if (!isConfigured || taskId.startsWith("MOCK-")) {
     return {
       id: taskId,
-      name: `RFP (Revised): ${data.payee || "Payee"} - ₱${Number(data.totalAmount || 0).toLocaleString()}`,
+      name: taskName,
       url: `https://app.clickup.com/t/${taskId}`,
       isMock: true,
       status: { status: "revised", color: "#3b82f6" },
     };
   }
 
-  const taskName = `RFP (Revised): ${data.payee || "Untitled"} - ₱${Number(data.totalAmount || 0).toLocaleString()} (${data.department || "General"})`;
-  const priority = data.urgency === "urgent" ? 1 : 3;
-  const description = buildTaskDescription(data, appUrl, taskId);
-  const customFields = await getMatchingCustomFields(listId, token, data, `${appUrl}?taskId=${taskId}`);
+  const priority = isUrgent ? 1 : 3;
+
+  const updateBody: any = {
+    name: taskName,
+    description: desc,
+    markdown_description: desc,
+    priority,
+  };
+
+  if (data.dateNeeded) {
+    const dueDateMs = new Date(data.dateNeeded).getTime();
+    if (!isNaN(dueDateMs)) {
+      updateBody.due_date = dueDateMs;
+      updateBody.due_date_time = false;
+    }
+  }
 
   const updateRes = await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
     method: "PUT",
@@ -233,12 +392,7 @@ export async function updateClickUpTask(
       Authorization: token,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      name: taskName,
-      description,
-      priority,
-      custom_fields: customFields,
-    }),
+    body: JSON.stringify(updateBody),
   });
 
   if (!updateRes.ok) {
@@ -256,6 +410,12 @@ export async function updateClickUpTask(
   };
 }
 
+export interface UploadAttachmentResult {
+  success: boolean;
+  url?: string;
+  id?: string;
+}
+
 /**
  * Uploads a file attachment to a ClickUp task.
  */
@@ -263,12 +423,12 @@ export async function uploadAttachmentToTask(
   taskId: string,
   fileBlob: Blob,
   filename: string
-): Promise<boolean> {
+): Promise<UploadAttachmentResult> {
   const { token, isConfigured } = getClickUpConfig();
 
   if (!isConfigured || taskId.startsWith("MOCK-")) {
     console.log(`[Mock Mode] Attachment simulated for task ${taskId}: ${filename}`);
-    return true;
+    return { success: true, url: `https://mock.clickup.com/attachments/${filename}` };
   }
 
   try {
@@ -286,12 +446,46 @@ export async function uploadAttachmentToTask(
     if (!res.ok) {
       const err = await res.text();
       console.error(`Failed to upload attachment ${filename}:`, err);
-      return false;
+      return { success: false };
     }
 
-    return true;
+    const json = await res.json();
+    return { success: true, url: json.url, id: json.id };
   } catch (err) {
     console.error(`Error uploading attachment to task ${taskId}:`, err);
+    return { success: false };
+  }
+}
+
+/**
+ * Updates the task description in ClickUp.
+ */
+export async function updateClickUpTaskDescription(
+  taskId: string,
+  description: string
+): Promise<boolean> {
+  const { token, isConfigured } = getClickUpConfig();
+
+  if (!isConfigured || taskId.startsWith("MOCK-")) {
+    return true;
+  }
+
+  try {
+    const res = await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        description,
+        markdown_description: description,
+      }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error(`Error updating description for task ${taskId}:`, err);
     return false;
   }
 }
@@ -306,7 +500,7 @@ export async function getClickUpTask(taskId: string): Promise<any> {
     return null;
   }
 
-  const res = await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
+  const res = await fetch(`${CLICKUP_API_BASE}/task/${taskId}?include_markdown_description=true`, {
     headers: { Authorization: token },
   });
 
@@ -315,4 +509,171 @@ export async function getClickUpTask(taskId: string): Promise<any> {
   }
 
   return await res.json();
+}
+
+/**
+ * Fetches all tasks from the configured ClickUp list.
+ */
+export async function getListTasks(includeClosed: boolean = true): Promise<any[]> {
+  const { token, listId, isConfigured } = getClickUpConfig();
+
+  if (!isConfigured) {
+    return [];
+  }
+
+  try {
+    const url = `${CLICKUP_API_BASE}/list/${listId}/task?include_closed=${includeClosed}&subtasks=true&include_markdown_description=true`;
+    const res = await fetch(url, {
+      headers: { Authorization: token },
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.error(`Failed to fetch tasks from list ${listId}:`, await res.text());
+      return [];
+    }
+
+    const data = await res.json();
+    return data.tasks || [];
+  } catch (err) {
+    console.error("Error fetching list tasks:", err);
+    return [];
+  }
+}
+
+/**
+ * Posts an audit comment on a ClickUp task.
+ */
+export async function postTaskComment(taskId: string, commentText: string): Promise<boolean> {
+  const { token, isConfigured } = getClickUpConfig();
+
+  if (!isConfigured || taskId.startsWith("MOCK-")) {
+    console.log(`[Mock Comment on ${taskId}]: ${commentText}`);
+    return true;
+  }
+
+  try {
+    const res = await fetch(`${CLICKUP_API_BASE}/task/${taskId}/comment`, {
+      method: "POST",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        comment_text: commentText,
+        notify_all: true,
+      }),
+    });
+
+    return res.ok;
+  } catch (err) {
+    console.error(`Error posting comment to task ${taskId}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Updates task status to "on going" and checks off the Team Leader checklist item.
+ */
+export async function approveTaskByApprover(
+  taskId: string,
+  approverName: string = "Team Leader",
+  notes?: string
+): Promise<boolean> {
+  const { token, isConfigured } = getClickUpConfig();
+
+  if (!isConfigured || taskId.startsWith("MOCK-")) {
+    return true;
+  }
+
+  try {
+    const currentTask = await getClickUpTask(taskId);
+    if (!currentTask) return false;
+
+    let updatedDescription = currentTask.description || currentTask.markdown_description || "";
+    // Mark checklist item #1 as checked across RFP, PO, and PCV
+    updatedDescription = updatedDescription.replace(
+      /-\s*\[\s*\]\s*(\*\*1\.[^*]+\*\*)/i,
+      `- [x] $1 (Approved by ${approverName})`
+    );
+
+    const updateRes = await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        status: "on going",
+        description: updatedDescription,
+        markdown_description: updatedDescription,
+      }),
+    });
+
+    if (!updateRes.ok) {
+      console.error("Failed to update task status:", await updateRes.text());
+      return false;
+    }
+
+    const commentMsg = notes
+      ? `✅ **Endorsed by ${approverName}**\nNotes: ${notes}\n\n*Status advanced to Finance Verification.*`
+      : `✅ **Endorsed by ${approverName}**\n\n*Status advanced to Finance Verification.*`;
+
+    await postTaskComment(taskId, commentMsg);
+    return true;
+  } catch (err) {
+    console.error(`Error approving task ${taskId}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Records an approver or finance revision request and posts instructions to the task.
+ */
+export async function rejectTaskForRevision(
+  taskId: string,
+  approverName: string = "Team Leader",
+  revisionReason: string,
+  actorRole: "tl" | "finance" = "tl"
+): Promise<boolean> {
+  const { token, isConfigured } = getClickUpConfig();
+
+  if (!isConfigured || taskId.startsWith("MOCK-")) {
+    return true;
+  }
+
+  try {
+    const roleLabel = actorRole === "finance" ? "Finance & Accounting" : "Team Leader";
+    const alertPrefix = `> ⚠️ **Revision Requested by ${roleLabel} (${approverName})**\n> **Reason:** ${revisionReason}\n\n`;
+
+    const currentTask = await getClickUpTask(taskId);
+    if (currentTask) {
+      const existingDesc = currentTask.description || currentTask.markdown_description || "";
+      // Strip any previous revision banner if present
+      const cleanDesc = existingDesc.replace(
+        /^>\s*⚠️\s*\*\*Revision Requested by[^\n]+\n(?:>\s*\*\*Reason:\*\*[^\n]+\n+)?/i,
+        ""
+      );
+      const updatedDescription = alertPrefix + cleanDesc;
+
+      await fetch(`${CLICKUP_API_BASE}/task/${taskId}`, {
+        method: "PUT",
+        headers: {
+          Authorization: token,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          description: updatedDescription,
+          markdown_description: updatedDescription,
+        }),
+      });
+    }
+
+    const commentMsg = `⚠️ **Revision Requested by ${roleLabel} (${approverName})**\n\n**Reason:** ${revisionReason}\n\n*Requestor has been notified to edit and resubmit.*`;
+    await postTaskComment(taskId, commentMsg);
+    return true;
+  } catch (err) {
+    console.error(`Error requesting revision for task ${taskId}:`, err);
+    return false;
+  }
 }

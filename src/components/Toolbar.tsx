@@ -2,17 +2,16 @@
 
 import React from "react";
 import {
-  Plus,
   FileDown,
   RotateCcw,
   Send,
   Loader2,
   AlertCircle,
-  Sparkles,
+  FileText,
+  ChevronDown,
 } from "lucide-react";
 
 interface ToolbarProps {
-  onAddItem: () => void;
   onPreviewPdf: () => void;
   onReset: () => void;
   onSubmit: () => void;
@@ -21,10 +20,11 @@ interface ToolbarProps {
   isRevision: boolean;
   taskId?: string;
   totalAmount: number;
+  selectedForm?: string;
+  onSelectForm?: (formKey: string) => void;
 }
 
 export function Toolbar({
-  onAddItem,
   onPreviewPdf,
   onReset,
   onSubmit,
@@ -33,59 +33,53 @@ export function Toolbar({
   isRevision,
   taskId,
   totalAmount,
+  selectedForm = "rfp",
+  onSelectForm,
 }: ToolbarProps) {
-  const formattedTotal = Number(totalAmount || 0).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-
   return (
-    <div className="sticky top-4 z-40 mb-6 bg-white/95 backdrop-blur-md rounded-2xl border border-slate-200 shadow-lg px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
-      {/* Left side: Status badge & Total Amount */}
-      <div className="flex items-center gap-4">
-        {isRevision ? (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-full">
-            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-            <span>Revision Mode: Task #{taskId}</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold rounded-full">
-            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>New RFP Request</span>
-          </div>
-        )}
+    <div className="w-full max-w-[850px] mx-auto sticky top-3 z-40 mb-4 bg-white border border-slate-300 shadow-sm px-4 py-2.5 flex items-center justify-between gap-3 relative">
+      {/* Top Gold Accent Line */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#C9AB4C]" />
 
-        <div className="hidden sm:flex items-center gap-2 border-l border-slate-200 pl-4">
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-semibold">
-            Total
-          </span>
-          <span className="text-lg font-black text-slate-800 font-mono">
-            ₱{formattedTotal}
-          </span>
+      {/* Left: Form Selector occupying expanded space */}
+      <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+        <div className="relative flex items-center w-full max-w-[320px] sm:max-w-[360px]">
+          <FileText className="w-3.5 h-3.5 text-[#003366] absolute left-2.5 pointer-events-none" />
+          <select
+            id="active-form-selector"
+            value={selectedForm}
+            onChange={(e) => onSelectForm?.(e.target.value)}
+            className="w-full appearance-none bg-slate-50 hover:bg-slate-100 border border-slate-300 hover:border-slate-400 text-[#003366] text-xs font-bold rounded-none pl-8 pr-7 h-8 focus:outline-none focus:ring-1 focus:ring-[#003366] cursor-pointer transition-colors"
+            title="Select form type"
+          >
+            <option value="rfp">Request for Payment (RFP)</option>
+            <option value="po">Purchase Order (PO)</option>
+            <option value="pcv">Petty Cash Voucher (PCV)</option>
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 pointer-events-none" />
         </div>
+
+        {/* Revision badge */}
+        {isRevision && (
+          <span className="inline-flex items-center gap-1 px-2 h-8 bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold shrink-0">
+            <AlertCircle className="w-3 h-3 text-amber-600" />
+            <span>Task #{taskId}</span>
+          </span>
+        )}
       </div>
 
-      {/* Right side: Action Buttons */}
-      <div className="flex items-center gap-2.5 flex-wrap">
-        <button
-          type="button"
-          onClick={onAddItem}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-xs"
-        >
-          <Plus className="w-3.5 h-3.5 text-slate-600" />
-          <span>Add Row</span>
-        </button>
-
+      {/* Right: Actions */}
+      <div className="flex items-center gap-2 shrink-0">
         <button
           type="button"
           onClick={onPreviewPdf}
           disabled={isGeneratingPdf}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all shadow-xs disabled:opacity-50"
+          className="h-8 px-3 text-xs font-semibold flex items-center gap-1.5 border border-slate-300 hover:border-slate-400 text-[#003366] hover:bg-slate-50 transition-colors cursor-pointer disabled:opacity-50"
         >
           {isGeneratingPdf ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-600" />
+            <Loader2 className="w-3.5 h-3.5 animate-spin text-[#003366]" />
           ) : (
-            <FileDown className="w-3.5 h-3.5 text-slate-600" />
+            <FileDown className="w-3.5 h-3.5 text-[#003366]" />
           )}
           <span>Download PDF</span>
         </button>
@@ -93,27 +87,28 @@ export function Toolbar({
         <button
           type="button"
           onClick={onReset}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+          className="h-8 px-2.5 text-xs font-semibold text-slate-400 hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
+          title="Reset form"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden md:inline">Reset</span>
+          <span>Reset</span>
         </button>
 
         <button
           type="button"
           onClick={onSubmit}
           disabled={isSubmitting || isGeneratingPdf}
-          className="inline-flex items-center gap-2 px-5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl transition-all shadow-md shadow-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+          className="h-8 px-4 text-xs font-bold text-white bg-[#003366] hover:bg-[#002244] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-              <span>Submitting to ClickUp...</span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#C9AB4C]" />
+              <span>Submitting...</span>
             </>
           ) : (
             <>
-              <Send className="w-4 h-4 text-white" />
-              <span>{isRevision ? "Update in ClickUp" : "Submit to ClickUp"}</span>
+              <Send className="w-3.5 h-3.5 text-[#C9AB4C]" />
+              <span>{isRevision ? "Update Task" : "Submit to ClickUp"}</span>
             </>
           )}
         </button>

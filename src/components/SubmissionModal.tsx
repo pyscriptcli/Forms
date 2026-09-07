@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle2, ExternalLink, Download, Copy, Check, FileText, ArrowRight } from "lucide-react";
+import { CheckCircle2, ExternalLink, Download, Copy, Check, FileText } from "lucide-react";
 import { SubmissionResponse } from "@/types/rfp";
 import { downloadPdfBlob } from "@/lib/pdfGenerator";
 
@@ -44,36 +44,39 @@ export function SubmissionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+      <div className="w-full max-w-xl bg-white rounded-none shadow-2xl border-2 border-[#003366] flex flex-col relative overflow-hidden">
+        {/* Top Gold Accent Line */}
+        <div className="h-[3px] bg-[#C9AB4C] w-full" />
+
         {/* Header decoration */}
-        <div className="bg-gradient-to-r from-blue-700 to-[#1e3a8a] px-8 pt-8 pb-6 text-white text-center relative">
-          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3 backdrop-blur-xs ring-8 ring-white/10">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+        <div className="bg-[#003366] px-8 pt-6 pb-6 text-white text-center relative">
+          <div className="w-14 h-14 bg-white/10 rounded-none border border-[#C9AB4C] flex items-center justify-center mx-auto mb-3">
+            <CheckCircle2 className="w-8 h-8 text-[#C9AB4C]" />
           </div>
-          <h2 className="text-2xl font-black tracking-tight">
+          <h2 className="font-serif italic text-2xl font-bold tracking-tight text-white">
             {response.message || "RFP Successfully Processed!"}
           </h2>
-          <p className="text-blue-100 text-sm mt-1">
+          <p className="text-slate-300 text-xs mt-1">
             Official Request for Payment document generated & synchronized
           </p>
 
           {response.isMock && (
-            <div className="inline-block mt-3 px-3 py-1 bg-amber-400/20 text-amber-200 border border-amber-400/30 text-xs font-semibold rounded-full">
+            <div className="inline-block mt-3 px-3 py-0.5 bg-[#C9AB4C]/20 text-[#C9AB4C] border border-[#C9AB4C]/40 text-[11px] font-semibold rounded-none">
               ⚡ Simulation Mode: Real ClickUp token not set yet
             </div>
           )}
         </div>
 
         {/* Details Content */}
-        <div className="p-8 space-y-6">
+        <div className="p-6 space-y-5">
           {/* Task Info Box */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="bg-slate-50 border border-slate-300 rounded-none p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
                 ClickUp Task ID
               </p>
-              <p className="text-lg font-mono font-bold text-slate-800">
+              <p className="font-bebas text-2xl text-[#003366] tracking-wider">
                 #{response.taskId}
               </p>
             </div>
@@ -83,56 +86,63 @@ export function SubmissionModal({
                 href={response.taskUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow transition-colors"
+                className="edgy-btn-primary px-4 py-2 text-xs flex items-center gap-1.5"
               >
-                <span>View Task in ClickUp</span>
-                <ExternalLink className="w-4 h-4" />
+                <span>View in ClickUp</span>
+                <ExternalLink className="w-3.5 h-3.5 text-[#C9AB4C]" />
               </a>
             ) : (
-              <div className="text-xs text-slate-500 italic bg-white px-3 py-1.5 rounded-md border border-slate-200">
+              <div className="text-xs text-slate-500 italic bg-white px-3 py-1.5 border border-slate-200">
                 Mock Task #{response.taskId}
               </div>
             )}
           </div>
 
           {/* Workflow Next Steps */}
-          <div className="border border-emerald-100 bg-emerald-50/50 rounded-xl p-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5 mb-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <div className="border border-slate-200 bg-slate-50 p-4 border-l-4 border-l-[#C9AB4C]">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[#003366] flex items-center gap-1.5 mb-1">
+              <span className="w-2 h-2 bg-[#C9AB4C]" />
               Automated Next Step in Workflow
             </h4>
-            <p className="text-xs text-emerald-900 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Your Team Leader has been notified in ClickUp for review. Once approved, the request will be automatically routed to the Finance Officer for payment disbursement.
             </p>
           </div>
 
           {/* Actions grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {pdfBlob && (
               <button
                 type="button"
                 onClick={handleDownload}
-                className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow transition-all"
+                className="edgy-btn-primary py-2.5 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Download className="w-4 h-4 text-slate-300" />
-                Download RFP PDF
+                <Download className="w-4 h-4 text-[#C9AB4C]" />
+                <span>Download PDF</span>
               </button>
             )}
+
+            <a
+              href={`/track?id=${response.taskId}`}
+              className="py-2.5 px-3 text-xs font-bold bg-[#003366] text-white hover:bg-[#002244] flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <span>📦 Track Status</span>
+            </a>
 
             <button
               type="button"
               onClick={handleCopyLink}
-              className="flex items-center justify-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl border border-slate-200 transition-all"
+              className="edgy-btn-outline py-2.5 px-3 text-xs flex items-center justify-center gap-1.5 cursor-pointer"
             >
               {copied ? (
                 <>
                   <Check className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-700">Revision Link Copied!</span>
+                  <span className="text-emerald-700">Copied!</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-4 h-4 text-slate-500" />
-                  <span>Copy Revision Link</span>
+                  <span>Copy Link</span>
                 </>
               )}
             </button>
@@ -140,11 +150,11 @@ export function SubmissionModal({
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-8 py-4 border-t border-slate-100 flex justify-end">
+        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow transition-colors"
+            className="edgy-btn-primary px-6 py-2 text-xs cursor-pointer"
           >
             Done
           </button>
