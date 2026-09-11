@@ -95,7 +95,7 @@ export function PortalNav() {
 
           {/* User Auth */}
           <div className="flex items-center">
-            {session ? (
+            {session && (
               <div className="flex items-center gap-2 h-8 px-2.5 text-xs text-white">
                 {session.user?.image ? (
                   <img src={session.user.image} alt="Avatar" className="w-5 h-5 rounded-full border border-slate-500" />
@@ -112,8 +112,6 @@ export function PortalNav() {
                   Sign Out
                 </button>
               </div>
-            ) : (
-
             )}
           </div>
         </div>
