@@ -113,12 +113,7 @@ export function PortalNav() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={() => signIn()}
-                className="h-8 px-3 text-xs font-bold text-white bg-[#003366] hover:bg-[#002244] border border-[#004080] rounded flex items-center shadow-xs transition-colors"
-              >
-                Sign In
-              </button>
+
             )}
           </div>
         </div>
